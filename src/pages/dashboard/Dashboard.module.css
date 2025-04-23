@@ -1,0 +1,59 @@
+.dashboard {
+  width: 100%;
+}
+
+.loadingContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 300px;
+}
+
+.statisticsRow {
+  margin-bottom: 24px;
+}
+
+.statisticCard {
+  height: 100%;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.09);
+  transition: all 0.3s;
+}
+
+.statisticCard:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
+}
+
+.contentRow {
+  margin-bottom: 24px;
+}
+
+.contentCard {
+  border-radius: 8px;
+  height: 100%;
+}
+
+.quickActions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.actionButton {
+  margin-top: 8px;
+}
+
+@media (max-width: 768px) {
+  .statisticCard {
+    margin-bottom: 16px;
+  }
+  
+  .contentCard {
+    margin-bottom: 16px;
+  }
+  
+  .statisticsRow, .contentRow {
+    margin-bottom: 0;
+  }
+} 

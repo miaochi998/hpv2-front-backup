@@ -1,1 +1,23 @@
-import { defineConfig } from "vite"; import react from "@vitejs/plugin-react"; import path from "path"; export default defineConfig({ plugins: [react()], resolve: { alias: { "@": path.resolve(__dirname, "./src") } }, css: { preprocessorOptions: { less: { javascriptEnabled: true, additionalData: `@import "@/assets/styles/variables.less";` } } }, server: { port: 6017, host: "0.0.0.0", force: true, proxy: { "/api": { target: "http://192.168.2.9:6016", changeOrigin: true } } } })
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import path from "path";
+
+export default defineConfig({
+  plugins: [react()],
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "./src")
+    }
+  },
+  server: {
+    port: 6017,
+    host: "0.0.0.0",
+    proxy: {
+      '/api': {
+        target: 'http://localhost:6016',
+        changeOrigin: true,
+        secure: false
+      }
+    }
+  }
+});

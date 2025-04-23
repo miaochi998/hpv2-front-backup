@@ -79,6 +79,65 @@ pm2 restart hpv2-hou
 pm2 logs hpv2-hou
 ```
 
+## 备份机制
+
+### 前端备份系统
+
+前端项目已配置Git版本控制和备份系统，可以将代码变更备份到本地Git仓库和远程GitHub仓库。
+
+#### 备份配置
+
+- **本地Git仓库**：/www/wwwroot/hpv2-front/.git
+- **远程仓库URL**：git@github.com:miaochi998/hpv2-front-backup.git
+- **备份脚本**：/www/wwwroot/hpv2-front/backup.sh
+
+#### 使用方法
+
+1. **手动执行备份**：
+   ```bash
+   cd /www/wwwroot/hpv2-front
+   ./backup.sh
+   ```
+
+2. **查看备份状态**：
+   ```bash
+   cd /www/wwwroot/hpv2-front
+   git status
+   ```
+
+3. **查看提交历史**：
+   ```bash
+   cd /www/wwwroot/hpv2-front
+   git log
+   ```
+
+4. **手动提交特定更改**：
+   ```bash
+   cd /www/wwwroot/hpv2-front
+   git add [文件或目录]
+   git commit -m "你的提交说明"
+   git push origin master
+   ```
+
+5. **恢复到特定版本**：
+   ```bash
+   cd /www/wwwroot/hpv2-front
+   git log  # 找到要恢复的提交ID
+   git checkout [提交ID]  # 临时查看该版本
+   
+   # 如果确定要恢复:
+   git checkout master
+   git reset --hard [提交ID]
+   git push -f origin master  # 谨慎使用，会覆盖远程仓库
+   ```
+
+#### 注意事项
+
+- **不要删除.git目录**：这会导致版本历史丢失
+- **备份前停止开发服务**：避免备份不完整的代码
+- **定期执行备份**：在重要功能完成后执行备份
+- **保持.gitignore更新**：确保不会备份大型依赖或敏感信息
+
 ## 项目结构
 
 ### 前端目录结构
@@ -97,6 +156,8 @@ pm2 logs hpv2-hou
 ├── Docs/                       # 项目文档
 ├── ecosystem.config.cjs        # PM2配置
 ├── vite.config.js              # Vite配置
+├── backup.sh                   # 备份脚本
+├── .git/                       # Git版本控制目录
 └── package.json                # 项目依赖
 ```
 
@@ -112,6 +173,7 @@ pm2 logs hpv2-hou
 │   ├── utils/                  # 工具函数
 │   └── app.js                  # 应用入口
 ├── Docs/                       # 项目文档
+├── backup.sh                   # 备份脚本
 └── package.json                # 项目依赖
 ```
 

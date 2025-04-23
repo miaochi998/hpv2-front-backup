@@ -50,6 +50,83 @@
    - 用户名：admin
    - 密码：654321
 
+## 版本管理与备份机制
+
+### Git仓库信息
+
+- **本地Git仓库**：/www/wwwroot/hpv2-front/.git
+- **远程仓库URL**：git@github.com:miaochi998/hpv2-front-backup.git
+- **主分支**：master
+- **备份脚本**：/www/wwwroot/hpv2-front/backup.sh
+
+### 备份操作指南
+
+#### 1. 执行备份
+
+执行备份脚本，会自动将所有更改提交到本地Git仓库并推送到远程GitHub仓库：
+
+```bash
+cd /www/wwwroot/hpv2-front
+./backup.sh
+```
+
+备份脚本会执行以下操作：
+- 添加所有文件到Git暂存区
+- 创建一个带有时间戳的提交
+- 推送到远程GitHub仓库
+
+#### 2. 手动备份特定文件
+
+如果只想备份特定的文件或目录，可以使用以下命令：
+
+```bash
+cd /www/wwwroot/hpv2-front
+git add path/to/file-or-directory
+git commit -m "备份说明"
+git push origin master
+```
+
+#### 3. 查看备份状态和历史
+
+查看当前工作区状态：
+```bash
+cd /www/wwwroot/hpv2-front
+git status
+```
+
+查看提交历史：
+```bash
+cd /www/wwwroot/hpv2-front
+git log
+```
+
+#### 4. 恢复到之前的版本
+
+查看历史版本：
+```bash
+cd /www/wwwroot/hpv2-front
+git log --oneline
+```
+
+临时查看特定版本：
+```bash
+git checkout <commit-id>
+```
+
+恢复到特定版本：
+```bash
+git checkout master
+git reset --hard <commit-id>
+git push -f origin master  # 强制推送，谨慎使用
+```
+
+### 备份注意事项
+
+1. **定期备份**：在完成重要功能或进行重大修改后执行备份
+2. **提交信息**：使用有意义的提交信息，便于日后查找
+3. **避免大文件**：保持 .gitignore 文件更新，避免提交node_modules等大型目录
+4. **保护Git目录**：不要删除.git目录，防止丢失版本历史
+
 ## PM2进程管理
 
 ### 前端PM2进程管理
@@ -122,13 +199,13 @@ Nginx配置已经完成，用于生产环境访问：
 
 | 任务 | 说明 | 状态 | 完成日期 | 备注 |
 |------|------|------|----------|------|
-| 1. 创建项目基础结构 | 使用Vite创建React项目，搭建目录结构 | 未开始 | - | 按照实施方案2.1-2.6小节进行 |
-| 2. 环境配置 | 配置开发/生产环境，ESLint，Prettier | 未开始 | - | 创建.env文件，配置vite.config.js |
-| 3. 安装依赖 | 安装核心库：React Router，Ant Design，Redux等 | 未开始 | - | 参考实施方案2.2小节 |
-| 4. 配置Git仓库 | 初始化Git仓库并提交基础代码 | 未开始 | - | 关联GitHub仓库 |
-| 5. API请求封装 | 封装axios请求工具，统一处理请求/响应 | 未开始 | - | 实现request.js工具 |
-| 6. 路由配置 | 配置基本路由结构 | 未开始 | - | 实现懒加载路由方案 |
-| 7. 状态管理 | 实现Redux Store和认证Slice | 未开始 | - | 完成auth相关状态管理 |
+| 1. 创建项目基础结构 | 使用Vite创建React项目，搭建目录结构 | 已完成 | 2025-04-23 | 按照实施方案2.1-2.6小节进行 |
+| 2. 环境配置 | 配置开发/生产环境，ESLint，Prettier | 已完成 | 2025-04-23 | 创建.env文件，配置vite.config.js |
+| 3. 安装依赖 | 安装核心库：React Router，Ant Design，Redux等 | 已完成 | 2025-04-23 | 参考实施方案2.2小节 |
+| 4. 配置Git仓库 | 初始化Git仓库并提交基础代码 | 已完成 | 2025-04-23 | 关联GitHub仓库 |
+| 5. API请求封装 | 封装axios请求工具，统一处理请求/响应 | 已完成 | 2025-04-23 | 实现request.js工具 |
+| 6. 路由配置 | 配置基本路由结构 | 已完成 | 2025-04-23 | 实现懒加载路由方案 |
+| 7. 状态管理 | 实现Redux Store和认证Slice | 已完成 | 2025-04-23 | 完成auth相关状态管理 |
 
 #### 第2周：基础组件实现
 
@@ -264,6 +341,15 @@ Nginx配置已经完成，用于生产环境访问：
 - 调整为HTTP协议访问（不使用SSL）
 - 进行前后端联调测试
 - 更新项目文档
+
+**[2025-04-23]** 版本控制与备份系统配置
+
+- 初始化Git仓库
+- 创建.gitignore文件，排除node_modules等不需要备份的文件
+- 创建backup.sh备份脚本
+- 配置远程GitHub仓库：git@github.com:miaochi998/hpv2-front-backup.git
+- 提交并推送初始代码
+- 更新项目文档，添加备份机制说明
 
 ## 问题记录与解决方案
 

@@ -1,21 +1,14 @@
-import { useState, useEffect } from 'react';
-import { Layout, Menu, Dropdown, Avatar, Typography, Spin } from 'antd';
+import { useEffect } from 'react';
+import { Layout, Avatar, Typography, Dropdown, Menu, Spin } from 'antd';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import {
-  DashboardOutlined,
-  UserOutlined,
-  ShoppingOutlined,
-  TagOutlined,
-  LogoutOutlined,
-  MenuFoldOutlined,
-  MenuUnfoldOutlined,
-} from '@ant-design/icons';
-import { getUserInfoAsync, logoutAsync } from '../../store/slices/authSlice';
-import PrivateRoute from '../auth/PrivateRoute';
+import { UserOutlined, LogoutOutlined } from '@ant-design/icons';
+import { getUserInfoAsync, logoutAsync } from '@/store/slices/authSlice';
+import PrivateRoute from '@/components/auth/PrivateRoute';
+import Sidebar from './Sidebar';
 import styles from './MainLayout.module.css';
 
-const { Header, Sider, Content } = Layout;
+const { Header, Content } = Layout;
 const { Title } = Typography;
 
 const MainLayout = () => {
@@ -23,63 +16,16 @@ const MainLayout = () => {
   const location = useLocation();
   const dispatch = useDispatch();
   const { user, loading } = useSelector((state) => state.auth);
-  const [collapsed, setCollapsed] = useState(false);
 
   // 获取用户信息
   useEffect(() => {
     if (!user) {
+      console.log('MainLayout: 用户信息未加载，尝试获取');
       dispatch(getUserInfoAsync());
+    } else {
+      console.log('MainLayout: 用户信息已加载', user);
     }
   }, [dispatch, user]);
-
-  // 判断当前用户角色
-  const isAdmin = user?.is_admin;
-
-  // 菜单项配置
-  const menuItems = [
-    {
-      key: '/dashboard',
-      icon: <DashboardOutlined />,
-      label: '仪表盘',
-    },
-    // 管理员菜单
-    ...(isAdmin
-      ? [
-          {
-            key: '/admin/brands',
-            icon: <TagOutlined />,
-            label: '品牌管理',
-          },
-          {
-            key: '/admin/users',
-            icon: <UserOutlined />,
-            label: '用户管理',
-          },
-          {
-            key: '/admin/products',
-            icon: <ShoppingOutlined />,
-            label: '公司货盘',
-          },
-        ]
-      : [
-          // 销售员菜单
-          {
-            key: '/seller/products',
-            icon: <ShoppingOutlined />,
-            label: '我的货盘',
-          },
-          {
-            key: '/seller/profile',
-            icon: <UserOutlined />,
-            label: '个人信息',
-          },
-        ]),
-  ];
-
-  // 处理菜单点击
-  const handleMenuClick = ({ key }) => {
-    navigate(key);
-  };
 
   // 处理登出
   const handleLogout = () => {
@@ -91,7 +37,7 @@ const MainLayout = () => {
   // 用户菜单
   const userMenu = (
     <Menu>
-      <Menu.Item key="profile" icon={<UserOutlined />} onClick={() => navigate('/seller/profile')}>
+      <Menu.Item key="profile" icon={<UserOutlined />} onClick={() => navigate(user?.is_admin ? '/admin/profile' : '/seller/profile')}>
         个人信息
       </Menu.Item>
       <Menu.Divider />
@@ -103,6 +49,7 @@ const MainLayout = () => {
 
   // 如果正在加载，显示加载中
   if (loading && !user) {
+    console.log('MainLayout: 显示加载中状态');
     return (
       <div className={styles.loadingContainer}>
         <Spin size="large" />
@@ -110,41 +57,20 @@ const MainLayout = () => {
     );
   }
 
+  console.log('MainLayout: 正在渲染主布局', { currentPath: location.pathname });
+
   return (
     <Layout className={styles.mainLayout}>
-      {/* 侧边栏 */}
-      <Sider 
-        width={200} 
-        collapsible 
-        collapsed={collapsed} 
-        onCollapse={setCollapsed}
-        breakpoint="lg"
-        theme="dark"
-        className={styles.sider}
-      >
-        <div className={styles.logo}>
-          <Title level={4} className={styles.logoTitle}>
-            {collapsed ? 'HP' : '货盘管理系统'}
-          </Title>
-        </div>
-        <Menu 
-          theme="dark" 
-          mode="inline" 
-          selectedKeys={[location.pathname]} 
-          items={menuItems} 
-          onClick={handleMenuClick}
-          className={styles.siderMenu}
-        />
-      </Sider>
-      <Layout>
+      {/* 使用新的Sidebar组件 */}
+      <Sidebar />
+      
+      <Layout className={styles.rightLayout}>
         {/* 头部 */}
         <Header className={styles.header}>
-          <div className={styles.headerToggle}>
-            {collapsed ? (
-              <MenuUnfoldOutlined onClick={() => setCollapsed(false)} className={styles.trigger} />
-            ) : (
-              <MenuFoldOutlined onClick={() => setCollapsed(true)} className={styles.trigger} />
-            )}
+          <div className={styles.headerTitle}>
+            <Title level={4} className={styles.pageTitle}>
+              帮你品牌货盘管理系统
+            </Title>
           </div>
           <div className={styles.headerRight}>
             <Dropdown overlay={userMenu} placement="bottomRight">
@@ -155,12 +81,10 @@ const MainLayout = () => {
             </Dropdown>
           </div>
         </Header>
+        
         {/* 内容区 */}
         <Content className={styles.content}>
-          <PrivateRoute 
-            element={<Outlet />} 
-            requiredRoles={location.pathname.startsWith('/admin') ? ['admin'] : []}
-          />
+          <Outlet />
         </Content>
       </Layout>
     </Layout>

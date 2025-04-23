@@ -1,6 +1,7 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
 import { Spin } from 'antd';
+import PrivateRoute from '@/components/auth/PrivateRoute';
 
 // 懒加载包装器
 const lazyLoad = (Component) => (
@@ -10,25 +11,30 @@ const lazyLoad = (Component) => (
 );
 
 // 懒加载组件
-const LoginPage = lazy(() => import('../pages/login/LoginPage'));
-const MainLayout = lazy(() => import('../components/layout/MainLayout'));
-const Dashboard = lazy(() => import('../pages/dashboard/Dashboard'));
-const Unauthorized = lazy(() => import('../pages/Unauthorized'));
+const LoginPage = lazy(() => import('@/pages/login/LoginPageNew'));
+const MainLayout = lazy(() => import('@/components/layout/MainLayout'));
+const Dashboard = lazy(() => import('@/pages/dashboard/Dashboard'));
+const Unauthorized = lazy(() => import('@/pages/Unauthorized'));
+const DebugLogin = lazy(() => import('@/pages/login/DebugLogin'));
 
 // 管理员页面
-const BrandManagement = lazy(() => import('../pages/admin/BrandManagement'));
-const UserManagement = lazy(() => import('../pages/admin/UserManagement'));
-const ProductManagement = lazy(() => import('../pages/admin/ProductManagement'));
+const BrandManagement = lazy(() => import('@/pages/admin/BrandManagement'));
+const UserManagement = lazy(() => import('@/pages/admin/UserManagement'));
+const ProductManagement = lazy(() => import('@/pages/admin/ProductManagement'));
 
 // 销售员页面
-const SellerProducts = lazy(() => import('../pages/seller/PalletManagement'));
-const ProfileManagement = lazy(() => import('../pages/seller/ProfileManagement'));
+const SellerProducts = lazy(() => import('@/pages/seller/PalletManagement'));
+const ProfileManagement = lazy(() => import('@/pages/seller/ProfileManagement'));
 
 // 创建路由
 const router = createBrowserRouter([
   {
     path: '/login',
     element: lazyLoad(LoginPage),
+  },
+  {
+    path: '/debug',
+    element: lazyLoad(DebugLogin),
   },
   {
     path: '/unauthorized',
@@ -44,7 +50,10 @@ const router = createBrowserRouter([
       },
       { 
         path: 'dashboard', 
-        element: lazyLoad(Dashboard) 
+        element: <PrivateRoute 
+          element={lazyLoad(Dashboard)} 
+          requiredRoles={[]} 
+        />
       },
       // 管理员路由
       {
@@ -52,15 +61,24 @@ const router = createBrowserRouter([
         children: [
           { 
             path: 'brands', 
-            element: lazyLoad(BrandManagement) 
+            element: <PrivateRoute 
+              element={lazyLoad(BrandManagement)} 
+              requiredRoles={['admin']} 
+            />
           },
           { 
             path: 'users', 
-            element: lazyLoad(UserManagement) 
+            element: <PrivateRoute 
+              element={lazyLoad(UserManagement)} 
+              requiredRoles={['admin']} 
+            />
           },
           { 
             path: 'products', 
-            element: lazyLoad(ProductManagement) 
+            element: <PrivateRoute 
+              element={lazyLoad(ProductManagement)} 
+              requiredRoles={['admin']} 
+            />
           },
         ],
       },
@@ -70,11 +88,17 @@ const router = createBrowserRouter([
         children: [
           { 
             path: 'products', 
-            element: lazyLoad(SellerProducts) 
+            element: <PrivateRoute 
+              element={lazyLoad(SellerProducts)} 
+              requiredRoles={['seller']} 
+            />
           },
           { 
             path: 'profile', 
-            element: lazyLoad(ProfileManagement) 
+            element: <PrivateRoute 
+              element={lazyLoad(ProfileManagement)} 
+              requiredRoles={['admin', 'seller']} 
+            />
           },
         ],
       },

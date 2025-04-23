@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>帮你品牌货盘管理系统</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        }
+        .container {
+            max-width: 500px;
+            padding: 40px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        h1 {
+            color: #1890ff;
+            margin-bottom: 30px;
+        }
+        .button-group {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 30px;
+        }
+        .button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            background-color: #1890ff;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .button.secondary {
+            background-color: #f0f0f0;
+            color: #333;
+        }
+        .button:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+        .info {
+            margin-top: 30px;
+            padding: 15px;
+            background-color: #f0f0f0;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>帮你品牌货盘管理系统</h1>
+        <p>请选择以下操作：</p>
+        
+        <div class="button-group">
+            <a href="/login" class="button">前往登录页</a>
+            <a href="/debug" class="button secondary">前往调试工具</a>
+        </div>
+        
+        <div class="info">
+            <p>应用版本: v1.0.0</p>
+            <p>测试账号: admin</p>
+            <p>密码: 654321</p>
+            <p>如遇登录问题，可使用调试工具临时登录</p>
+        </div>
+    </div>
+</body>
+</html> 

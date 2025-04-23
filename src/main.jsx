@@ -1,7 +1,9 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import App from './App.jsx';
 import './index.css';
+import App from './App.jsx';
+import { Provider } from 'react-redux';
+import store from './store';
 
 // 开发环境下的错误捕获
 if (import.meta.env.DEV) {
@@ -17,6 +19,8 @@ if (import.meta.env.DEV) {
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <App />
+    <Provider store={store}>
+      <App />
+    </Provider>
   </React.StrictMode>,
 );

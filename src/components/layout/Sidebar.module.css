@@ -1,0 +1,80 @@
+.sidebar {
+  height: 100vh;
+  position: fixed;
+  left: 0;
+  z-index: 100;
+}
+
+.sidebarHeader {
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 16px;
+  overflow: hidden;
+}
+
+.logo {
+  width: 100%;
+  text-align: center;
+}
+
+.logoTitle {
+  color: #fff !important;
+  margin: 0 !important;
+  white-space: nowrap;
+  font-size: 16px !important;
+}
+
+.collapsedLogo {
+  color: #fff;
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.sidebarMenu {
+  height: calc(100vh - 128px);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.sidebarFooter {
+  height: 64px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  color: rgba(255, 255, 255, 0.65);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.userInfo {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+.avatar {
+  margin-right: 8px;
+  background-color: #1890ff;
+}
+
+.userName {
+  color: rgba(255, 255, 255, 0.85);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.toggleButton {
+  cursor: pointer;
+  font-size: 16px;
+  width: 100%;
+  text-align: center;
+}
+
+.toggleButton:hover {
+  color: #fff;
+} 

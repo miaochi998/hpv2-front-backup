@@ -2,57 +2,42 @@
   min-height: 100vh;
 }
 
-.sider {
-  box-shadow: 2px 0 6px rgba(0, 21, 41, 0.35);
-  z-index: 10;
+.rightLayout {
+  margin-left: 200px;
+  transition: all 0.2s;
 }
 
-.logo {
-  height: 64px;
+.loadingContainer {
   display: flex;
-  align-items: center;
   justify-content: center;
-  padding: 0 24px;
-  overflow: hidden;
-}
-
-.logoTitle {
-  color: #fff !important;
-  margin: 0 !important;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.siderMenu {
-  border-right: 0;
+  align-items: center;
+  height: 100vh;
 }
 
 .header {
   background: #fff;
-  padding: 0;
-  box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
+  padding: 0 24px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  z-index: 1;
+  height: 64px;
+  position: sticky;
+  top: 0;
 }
 
-.headerToggle {
-  padding: 0 24px;
+.headerTitle {
+  display: flex;
+  align-items: center;
 }
 
-.trigger {
-  font-size: 18px;
-  cursor: pointer;
-  transition: color 0.3s;
-}
-
-.trigger:hover {
-  color: #1890ff;
+.pageTitle {
+  margin: 0 !important;
+  color: rgba(0, 0, 0, 0.85) !important;
 }
 
 .headerRight {
-  padding-right: 24px;
   display: flex;
   align-items: center;
 }
@@ -61,6 +46,12 @@
   display: flex;
   align-items: center;
   cursor: pointer;
+  padding: 0 12px;
+  transition: all 0.3s;
+}
+
+.userInfo:hover {
+  background: rgba(0, 0, 0, 0.025);
 }
 
 .avatar {
@@ -68,32 +59,31 @@
 }
 
 .username {
+  font-size: 14px;
   color: rgba(0, 0, 0, 0.65);
 }
 
 .content {
-  margin: 16px;
+  margin: 24px;
   padding: 24px;
   background: #fff;
-  min-height: 280px;
   border-radius: 4px;
+  min-height: calc(100vh - 112px);
 }
 
-.loadingContainer {
-  height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+@media (max-width: 992px) {
+  .rightLayout {
+    margin-left: 80px;
+  }
 }
 
-/* 响应式样式 */
 @media (max-width: 768px) {
   .header {
     padding: 0 12px;
   }
   
   .content {
-    margin: 8px;
+    margin: 12px;
     padding: 16px;
   }
   

@@ -1,129 +1,129 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Form, Input, Button, message, Card, Row, Col, Typography, Spin } from 'antd';
+import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Form, Input, Button, Checkbox, message, Typography, Spin } from 'antd';
-import { UserOutlined, LockOutlined } from '@ant-design/icons';
-import { loginAsync, clearError } from '../../store/slices/authSlice';
-import styles from './LoginPage.module.css';
+import { loginAsync, getUserInfoAsync } from '@/store/slices/authSlice';
+import './LoginPage.css';
 
-const { Title, Paragraph } = Typography;
+const { Title } = Typography;
 
-const LoginPage = () => {
+function LoginPage() {
+  const [loading, setLoading] = useState(false);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
-  const { isAuthenticated, loading, error } = useSelector((state) => state.auth);
+  const { isAuthenticated, user, error } = useSelector(state => state.auth);
   const [form] = Form.useForm();
-  const [submitting, setSubmitting] = useState(false);
 
-  // 如果已登录，跳转到首页或之前尝试访问的页面
+  // 如果已经登录，直接跳转到仪表盘
   useEffect(() => {
-    if (isAuthenticated) {
-      const from = location.state?.from?.pathname || '/';
-      navigate(from, { replace: true });
+    if (isAuthenticated && user) {
+      console.log('LoginPage: 用户已登录，直接跳转到仪表盘', { user });
+      navigate('/dashboard');
     }
-  }, [isAuthenticated, navigate, location]);
+  }, [isAuthenticated, user, navigate]);
 
-  // 处理错误信息
-  useEffect(() => {
-    if (error) {
-      message.error(error);
-      dispatch(clearError());
-    }
-  }, [error, dispatch]);
+  // 尝试从location state中获取之前的路径
+  const from = location.state?.from?.pathname || '/dashboard';
+  console.log('LoginPage: 当前页面信息', { 
+    currentPath: location.pathname,
+    fromPath: from,
+    isAuthenticated,
+    hasUser: !!user 
+  });
 
-  // 表单提交
   const handleSubmit = async (values) => {
-    setSubmitting(true);
+    console.log('LoginPage: 开始登录流程', values);
     try {
-      await dispatch(loginAsync(values)).unwrap();
-      message.success('登录成功');
-    } catch (err) {
-      console.error('登录失败:', err);
+      setLoading(true);
+      // 登录获取token
+      console.log('LoginPage: 调用登录API');
+      const loginResult = await dispatch(loginAsync(values)).unwrap();
+      console.log('LoginPage: 登录API响应', loginResult);
+      
+      if (loginResult?.token) {
+        // 获取用户信息
+        console.log('LoginPage: 获取用户信息');
+        const userInfoResult = await dispatch(getUserInfoAsync()).unwrap();
+        console.log('LoginPage: 用户信息响应', userInfoResult);
+        
+        if (userInfoResult) {
+          message.success('登录成功');
+          console.log('LoginPage: 登录成功，准备跳转到', from);
+          // 登录成功后跳转到之前访问的页面或仪表盘
+          navigate(from, { replace: true });
+        } else {
+          message.error('获取用户信息失败');
+        }
+      }
+    } catch (error) {
+      console.error('LoginPage: 登录失败:', error);
+      message.error(error?.message || '登录失败，请检查用户名和密码');
     } finally {
-      setSubmitting(false);
+      setLoading(false);
     }
   };
 
   return (
-    <div className={styles.loginContainer}>
-      {/* 左侧品牌展示区 */}
-      <div className={styles.loginBanner}>
-        <div className={styles.brandLogo}>
-          <img src="/logo.svg" alt="BangNi Logo" />
-        </div>
-        <div className={styles.systemTitle}>
-          <h1>帮你品牌货盘管理系统</h1>
-          <p>河南省帮你家居用品有限公司</p>
-        </div>
-      </div>
+    <div className="login-container">
+      <Row justify="center" align="middle">
+        <Col xs={22} sm={16} md={12} lg={8} xl={6}>
+          <Card className="login-card">
+            <div className="login-header">
+              <Title level={2}>系统登录</Title>
+              <Title level={5} type="secondary">欢迎回来，请登录您的账号</Title>
+            </div>
+            
+            <Spin spinning={loading} tip="登录中...">
+              <Form
+                form={form}
+                name="login"
+                layout="vertical"
+                initialValues={{ remember: true }}
+                onFinish={handleSubmit}
+                size="large"
+              >
+                <Form.Item
+                  name="username"
+                  rules={[{ required: true, message: '请输入用户名' }]}
+                >
+                  <Input 
+                    prefix={<UserOutlined />} 
+                    placeholder="用户名" 
+                    autoComplete="username"
+                  />
+                </Form.Item>
 
-      {/* 右侧登录表单区 */}
-      <div className={styles.loginPanel}>
-        <div className={styles.loginHeader}>
-          <Title level={2}>用户登录</Title>
-        </div>
-        
-        <Form
-          form={form}
-          name="login"
-          className={styles.loginForm}
-          initialValues={{ remember: true }}
-          onFinish={handleSubmit}
-          size="large"
-        >
-          <Form.Item
-            name="username"
-            rules={[{ required: true, message: '请输入用户名' }]}
-          >
-            <Input 
-              prefix={<UserOutlined className={styles.iconPrefix} />} 
-              placeholder="用户名" 
-            />
-          </Form.Item>
-          
-          <Form.Item
-            name="password"
-            rules={[{ required: true, message: '请输入密码' }]}
-          >
-            <Input.Password
-              prefix={<LockOutlined className={styles.iconPrefix} />}
-              placeholder="密码"
-            />
-          </Form.Item>
-          
-          <Form.Item>
-            <Form.Item name="remember" valuePropName="checked" noStyle>
-              <Checkbox>记住我</Checkbox>
-            </Form.Item>
-          </Form.Item>
+                <Form.Item
+                  name="password"
+                  rules={[{ required: true, message: '请输入密码' }]}
+                >
+                  <Input.Password
+                    prefix={<LockOutlined />}
+                    placeholder="密码"
+                    autoComplete="current-password"
+                  />
+                </Form.Item>
 
-          <Form.Item>
-            <Button 
-              type="primary" 
-              htmlType="submit" 
-              className={styles.loginButton}
-              loading={submitting || loading}
-              disabled={submitting || loading}
-              block
-            >
-              登录
-            </Button>
-          </Form.Item>
-        </Form>
-        
-        {error && (
-          <div className={styles.errorMessage}>
-            {error}
-          </div>
-        )}
-      </div>
-      
-      {/* 背景装饰 */}
-      <div className={styles.backgroundDecoration1}></div>
-      <div className={styles.backgroundDecoration2}></div>
+                <Form.Item>
+                  <Button
+                    type="primary"
+                    htmlType="submit"
+                    className="login-btn"
+                    block
+                    loading={loading}
+                  >
+                    登录
+                  </Button>
+                </Form.Item>
+              </Form>
+            </Spin>
+          </Card>
+        </Col>
+      </Row>
     </div>
   );
-};
+}
 
 export default LoginPage; 
