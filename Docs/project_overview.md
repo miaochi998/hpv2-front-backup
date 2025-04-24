@@ -231,6 +231,26 @@ pm2 startup
    cd /www/wwwroot/hpv2-front
    git log
    ```
+   ```bash
+
+   # 简洁查看（如遇乱码请使用替代方案）
+   git log --oneline --graph
+
+   # 替代方案（解决终端乱码问题）
+   git log --pretty=format:'%h - %an, %ar : %s' | cat
+
+   # 详细查看(按q退出)
+   git log -p
+
+   # 按时间筛选（注意日期格式）
+   git log --since="2025-04-01" --until="2025-04-15"
+
+   # 图形化查看方案（需安装gitk）
+   gitk --all
+
+   # 导出日志到文件
+   git log --oneline --graph > log.txt
+   ```
 
 4. **手动提交特定更改**：
    ```bash

@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { Layout, Avatar, Typography, Dropdown, Menu, Spin } from 'antd';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { UserOutlined, LogoutOutlined } from '@ant-design/icons';
+import { UserOutlined, LogoutOutlined, DownOutlined } from '@ant-design/icons';
 import { getUserInfoAsync, logoutAsync } from '@/store/slices/authSlice';
 import PrivateRoute from '@/components/auth/PrivateRoute';
 import Sidebar from './Sidebar';
@@ -34,25 +34,33 @@ const MainLayout = () => {
     });
   };
 
-  // 用户菜单
-  const userMenu = (
-    <Menu>
-      <Menu.Item key="profile" icon={<UserOutlined />} onClick={() => navigate(user?.is_admin ? '/admin/profile' : '/seller/profile')}>
-        个人信息
-      </Menu.Item>
-      <Menu.Divider />
-      <Menu.Item key="logout" icon={<LogoutOutlined />} onClick={handleLogout}>
-        退出登录
-      </Menu.Item>
-    </Menu>
-  );
+  // 创建Dropdown菜单项
+  const items = [
+    {
+      key: 'profile',
+      icon: <UserOutlined />,
+      label: '个人信息',
+      onClick: () => navigate(user?.is_admin ? '/admin/profile' : '/seller/profile')
+    },
+    {
+      type: 'divider'
+    },
+    {
+      key: 'logout',
+      icon: <LogoutOutlined />,
+      label: '退出登录',
+      onClick: handleLogout
+    }
+  ];
 
   // 如果正在加载，显示加载中
   if (loading && !user) {
     console.log('MainLayout: 显示加载中状态');
     return (
       <div className={styles.loadingContainer}>
-        <Spin size="large" />
+        <Spin>
+          <div style={{ padding: '50px', textAlign: 'center' }}>加载中...</div>
+        </Spin>
       </div>
     );
   }
@@ -73,11 +81,11 @@ const MainLayout = () => {
             </Title>
           </div>
           <div className={styles.headerRight}>
-            <Dropdown overlay={userMenu} placement="bottomRight">
-              <div className={styles.userInfo}>
+            <Dropdown menu={{ items }} placement="bottomRight" trigger={['click']}>
+              <a onClick={(e) => e.preventDefault()} className={styles.userInfo}>
                 <Avatar icon={<UserOutlined />} className={styles.avatar} />
                 <span className={styles.username}>{user?.name || '用户'}</span>
-              </div>
+              </a>
             </Dropdown>
           </div>
         </Header>
