@@ -30,6 +30,20 @@
   margin-top: 16px;
 }
 
+/* 错误提示样式 */
+.login-error-alert {
+  margin-bottom: 20px;
+  border-radius: 4px;
+}
+
+.login-error-alert .ant-alert-message {
+  font-weight: 500;
+}
+
+.login-error-alert .ant-alert-description {
+  margin-top: 4px;
+}
+
 /* 使表单元素更加美观 */
 .ant-input-affix-wrapper {
   border-radius: 6px;

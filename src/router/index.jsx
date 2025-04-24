@@ -11,11 +11,11 @@ const lazyLoad = (Component) => (
 );
 
 // 懒加载组件
-const LoginPage = lazy(() => import('@/pages/login/LoginPageNew'));
+const LoginPage = lazy(() => import('@/pages/login/Login'));
+const DebugLogin = lazy(() => import('@/pages/login/DebugLogin'));
 const MainLayout = lazy(() => import('@/components/layout/MainLayout'));
 const Dashboard = lazy(() => import('@/pages/dashboard/Dashboard'));
 const Unauthorized = lazy(() => import('@/pages/Unauthorized'));
-const DebugLogin = lazy(() => import('@/pages/login/DebugLogin'));
 
 // 管理员页面
 const BrandManagement = lazy(() => import('@/pages/admin/BrandManagement'));
@@ -41,12 +41,12 @@ const router = createBrowserRouter([
     element: lazyLoad(Unauthorized),
   },
   {
-    path: '/',
+    path: '/protected',
     element: lazyLoad(MainLayout),
     children: [
       { 
         index: true, 
-        element: <Navigate to="/dashboard" replace /> 
+        element: <Navigate to="/protected/dashboard" replace /> 
       },
       { 
         path: 'dashboard', 
@@ -104,10 +104,35 @@ const router = createBrowserRouter([
       },
     ],
   },
+  // 根路径直接跳转到登录页
+  {
+    path: '/',
+    element: <Navigate to="/login" replace />
+  },
+  // 兼容旧路径
+  {
+    path: '/basic-login',
+    element: <Navigate to="/login" replace />
+  },
+  // 兼容旧链接，将dashboard重定向
+  {
+    path: '/dashboard', 
+    element: <Navigate to="/protected/dashboard" replace />
+  },
+  // 兼容旧链接，将admin重定向
+  {
+    path: '/admin/*',
+    element: <Navigate to="/protected/admin/*" replace />
+  },
+  // 兼容旧链接，将seller重定向
+  {
+    path: '/seller/*',
+    element: <Navigate to="/protected/seller/*" replace />
+  },
   // 默认重定向
   {
     path: '*',
-    element: <Navigate to="/" replace />
+    element: <Navigate to="/login" replace />
   },
 ]);
 

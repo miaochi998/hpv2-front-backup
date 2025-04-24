@@ -69,6 +69,23 @@ systemctl restart nginx
 # 进入后端项目目录
 cd /www/wwwroot/hpv2-hou
 
+## PM2管理操作指南：
+   【启动项目】
+   pm2 start npm --name hpv2-hou -- run start
+   【停止项目】
+   pm2 stop hpv2-hou
+   【重启项目】
+   pm2 restart hpv2-hou
+   【查看项目状态】
+   pm2 list
+   【查看实时日志】
+   pm2 logs hpv2-hou --lines 100
+   【设置开机自启】
+   pm2 save
+   pm2 startup
+   【删除所有名为 hpv2-hou 的进程】
+   pm2 delete hpv2-hou
+
 # 确认后端运行状态
 pm2 list
 
@@ -78,6 +95,110 @@ pm2 restart hpv2-hou
 # 查看日志
 pm2 logs hpv2-hou
 ```
+
+服务器关机或重启后，需要重新启动前端和后端服务。以下是详细的启动步骤：
+启动步骤
+```
+1. 启动后端服务
+# 进入后端项目目录
+cd /www/wwwroot/hpv2-hou
+
+# 启动后端服务
+pm2 start src/app.js --name hpv2-hou
+
+# 确认后端服务状态
+pm2 list
+
+2. 启动前端服务
+开发环境和生产环境一起启动
+# 进入前端项目目录
+cd /www/wwwroot/hpv2-front
+
+# 使用配置文件启动所有前端服务
+pm2 start ecosystem.config.cjs
+
+# 确认前端服务状态
+pm2 list
+
+分别启动开发环境和生产环境
+# 进入前端项目目录
+cd /www/wwwroot/hpv2-front
+
+# 只启动开发环境
+pm2 start ecosystem.config.cjs --only hpv2-front-dev
+
+# 只启动生产环境
+pm2 start ecosystem.config.cjs --only hpv2-front-prod
+
+3. 确认服务是否成功启动
+# 查看所有PM2进程状态
+pm2 list
+
+# 检查开发环境是否可访问
+curl -I http://localhost:6017
+
+# 检查生产环境是否可访问
+curl -I http://localhost:6015
+
+# 查看日志确认是否有错误
+pm2 logs
+
+4. 可选：重启Nginx服务（如果需要）
+# 重启Nginx服务
+systemctl restart nginx
+
+# 检查Nginx状态
+systemctl status nginx
+
+自动化启动（推荐）
+您可以创建一个启动脚本，在服务器重启后自动启动所有服务：
+
+# 创建启动脚本
+cat > /www/wwwroot/start_services.sh << 'EOF'
+#!/bin/bash
+
+# 启动后端服务
+cd /www/wwwroot/hpv2-hou
+pm2 start src/app.js --name hpv2-hou
+
+# 启动前端服务
+cd /www/wwwroot/hpv2-front
+pm2 start ecosystem.config.cjs
+
+# 重启Nginx（如需要）
+systemctl restart nginx
+
+# 显示服务状态
+pm2 list
+EOF
+
+# 添加执行权限
+chmod +x /www/wwwroot/start_services.sh
+
+然后，您可以将此脚本添加到系统启动项中：
+# 编辑crontab
+crontab -e
+
+# 添加以下行
+@reboot /www/wwwroot/start_services.sh
+
+或者使用PM2的启动保存功能：
+# 首先启动所有服务
+cd /www/wwwroot/hpv2-hou
+pm2 start src/app.js --name hpv2-hou
+
+cd /www/wwwroot/hpv2-front
+pm2 start ecosystem.config.cjs
+
+# 保存当前进程列表
+pm2 save
+
+# 生成启动脚本
+pm2 startup
+
+通过以上步骤，在服务器重启后，所有服务都会自动启动，确保系统持续可用。
+```
+
 
 ## 备份机制
 

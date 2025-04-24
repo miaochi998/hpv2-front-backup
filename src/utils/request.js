@@ -40,26 +40,31 @@ request.interceptors.request.use(
     }
     
     // 添加调试日志
-    console.log(`请求 ${config.method.toUpperCase()} ${config.url}`, {
+    console.log(`[REQUEST] ${config.method.toUpperCase()} ${config.url}`, {
       headers: config.headers,
       data: config.data,
       params: config.params,
       baseURL: config.baseURL,
-      fullURL: `${config.baseURL}${config.url}`
+      fullURL: `${config.baseURL}${config.url}`,
+      timestamp: new Date().toISOString()
     });
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => {
+    console.error('[REQUEST ERROR]', error);
+    return Promise.reject(error);
+  }
 );
 
 // 响应拦截器 - 处理常见错误
 request.interceptors.response.use(
   (response) => {
     // 添加调试日志
-    console.log(`响应 ${response.config.url}`, {
+    console.log(`[RESPONSE] ${response.config.url}`, {
       status: response.status,
       data: response.data,
-      headers: response.headers
+      headers: response.headers,
+      timestamp: new Date().toISOString()
     });
     
     // 检查后端响应格式
@@ -69,6 +74,7 @@ request.interceptors.response.use(
       return data;
     } else {
       // 业务逻辑错误，抛出异常
+      console.error('[RESPONSE ERROR] 业务逻辑错误', data);
       const error = new Error(data.message || '请求失败');
       error.response = response;
       return Promise.reject(error);
@@ -76,7 +82,22 @@ request.interceptors.response.use(
   },
   (error) => {
     // 添加调试日志
-    console.error('请求错误:', error);
+    console.error('[RESPONSE ERROR] 请求错误:', error);
+    
+    // 详细记录错误信息
+    const errorData = {
+      message: error.message,
+      url: error.config?.url,
+      method: error.config?.method,
+      timestamp: new Date().toISOString()
+    };
+    
+    if (error.response) {
+      errorData.status = error.response.status;
+      errorData.data = error.response.data;
+      errorData.headers = error.response.headers;
+      console.error('[RESPONSE ERROR DETAILS]', errorData);
+    }
     
     // 处理错误情况
     if (error.response) {
@@ -93,6 +114,8 @@ request.interceptors.response.use(
         message.error('您没有权限执行此操作');
       } else if (status === 500) {
         message.error('服务器错误，请稍后再试');
+      } else if (status === 404) {
+        message.error('请求的资源不存在');
       } else {
         // 其他错误
         const errorMsg = error.response.data?.message || '请求失败';

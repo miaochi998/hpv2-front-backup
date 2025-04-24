@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { login as loginApi, getUserProfile, logout as logoutApi } from '../../api/auth';
+import request from '@/utils/request';
+import { message } from 'antd';
 
 // Token处理
 const TOKEN_KEY = 'auth_token';
@@ -20,33 +21,43 @@ const removeToken = () => {
   localStorage.removeItem(TOKEN_KEY);
 };
 
+// 从localStorage加载初始状态
+const loadInitialState = () => {
+  const token = getToken();
+  return {
+    isAuthenticated: !!token,
+    token: token || null,
+    user: null,
+    error: null,
+    loading: false
+  };
+};
+
 // 登录异步action
 export const loginAsync = createAsyncThunk(
   'auth/login',
-  async (credentials, { dispatch, rejectWithValue }) => {
+  async (credentials, { rejectWithValue }) => {
     try {
-      const response = await loginApi(credentials);
+      const response = await request.post('/api/auth/login', credentials);
       
-      if (response && response.code === 200 && response.data) {
-        const { token, user_info } = response.data;
-        
-        // 保存token
-        if (token && setToken(token)) {
-          // 登录成功后自动获取用户信息
-          if (!user_info) {
-            dispatch(getUserInfoAsync());
-          }
-          return response.data;
-        } else {
-          throw new Error('登录失败，无法保存Token');
-        }
-      } else {
-        throw new Error(response?.message || '登录失败，响应格式错误');
+      // 保存token到localStorage
+      if (response.data?.token) {
+        localStorage.setItem('auth_token', response.data.token);
       }
+      
+      return response.data;
     } catch (error) {
-      // 登录失败，确保清除token
-      removeToken();
-      return rejectWithValue(error.message || '登录失败，请检查用户名和密码');
+      console.error('登录失败:', error);
+      
+      let errorMessage = '登录失败，请稍后重试';
+      
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      return rejectWithValue(errorMessage);
     }
   }
 );
@@ -56,15 +67,20 @@ export const getUserInfoAsync = createAsyncThunk(
   'auth/getUserInfo',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await getUserProfile();
-      
-      if (response && response.code === 200 && response.data) {
-        return response.data;
-      } else {
-        throw new Error(response?.message || '获取用户信息失败');
-      }
+      const response = await request.get('/api/auth/profile');
+      return response.data;
     } catch (error) {
-      return rejectWithValue(error.message || '获取用户信息失败');
+      console.error('获取用户信息失败:', error);
+      
+      let errorMessage = '获取用户信息失败';
+      
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      return rejectWithValue(errorMessage);
     }
   }
 );
@@ -74,52 +90,57 @@ export const logoutAsync = createAsyncThunk(
   'auth/logout',
   async (_, { rejectWithValue }) => {
     try {
-      await logoutApi();
-      removeToken();
+      // 调用后端登出接口
+      await request.post('/api/auth/logout');
+      
+      // 清除localStorage中的token
+      localStorage.removeItem('auth_token');
+      
       return true;
     } catch (error) {
-      // 即使API失败也清除本地token
-      removeToken();
-      return rejectWithValue(error.message || '登出失败');
+      console.error('登出失败:', error);
+      
+      // 无论成功失败，都清除本地存储的token
+      localStorage.removeItem('auth_token');
+      
+      return rejectWithValue('登出失败');
     }
   }
 );
 
-// 初始状态
-const initialToken = getToken();
+// 使用加载的状态作为初始状态
+const initialState = loadInitialState();
 
+// 创建auth slice
 const authSlice = createSlice({
   name: 'auth',
-  initialState: {
-    token: initialToken,
-    isAuthenticated: !!initialToken,
-    user: null,
-    loading: false,
-    error: null,
-  },
+  initialState,
   reducers: {
     clearError: (state) => {
+      console.log('显式清除错误状态');
       state.error = null;
     },
-    // 调试登录
-    debugLogin: (state, action) => {
-      state.isAuthenticated = true;
-      state.token = action.payload.token;
-      state.user = action.payload.user_info;
-      setToken(action.payload.token);
-    },
-    // 手动清除认证状态
     clearAuth: (state) => {
       state.isAuthenticated = false;
-      state.token = null;
       state.user = null;
       state.error = null;
-      removeToken();
+      localStorage.removeItem('auth_token');
+    },
+    debugLogin: (state, action) => {
+      // 调试模式下直接设置认证状态
+      state.isAuthenticated = true;
+      state.user = action.payload.user_info;
+      state.token = action.payload.token;
+      state.error = null;
+      state.loading = false;
+      
+      // 保存token到localStorage
+      localStorage.setItem('auth_token', action.payload.token);
     }
   },
   extraReducers: (builder) => {
+    // 登录处理
     builder
-      // 登录处理
       .addCase(loginAsync.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -127,56 +148,45 @@ const authSlice = createSlice({
       .addCase(loginAsync.fulfilled, (state, action) => {
         state.loading = false;
         state.isAuthenticated = true;
-        state.token = action.payload.token;
-        
-        if (action.payload.user_info) {
-          state.user = action.payload.user_info;
-        }
+        // 不清除错误，只有在明确调用clearError才清除
       })
       .addCase(loginAsync.rejected, (state, action) => {
         state.loading = false;
         state.isAuthenticated = false;
-        state.token = null;
-        state.user = null;
-        state.error = action.payload || '登录失败';
+        state.error = action.payload || '登录失败，请稍后重试';
+        console.error('登录被拒绝，设置错误状态:', state.error);
       })
       
       // 获取用户信息处理
       .addCase(getUserInfoAsync.pending, (state) => {
         state.loading = true;
+        // 不清除错误，保持现有错误状态
       })
       .addCase(getUserInfoAsync.fulfilled, (state, action) => {
         state.loading = false;
+        state.isAuthenticated = true;
         state.user = action.payload;
+        // 获取用户信息成功，清除可能的错误
+        state.error = null;
       })
       .addCase(getUserInfoAsync.rejected, (state, action) => {
         state.loading = false;
+        state.isAuthenticated = false;
+        state.user = null;
         state.error = action.payload || '获取用户信息失败';
-        
-        // 如果获取用户信息失败且状态码为401，清除认证状态
-        if (action.error?.message?.includes('401')) {
-          state.isAuthenticated = false;
-          state.token = null;
-          removeToken();
-        }
+        console.error('获取用户信息被拒绝，设置错误状态:', state.error);
+        // 清除token
+        localStorage.removeItem('auth_token');
       })
       
       // 登出处理
       .addCase(logoutAsync.fulfilled, (state) => {
         state.isAuthenticated = false;
-        state.token = null;
-        state.user = null;
-        state.error = null;
-      })
-      .addCase(logoutAsync.rejected, (state) => {
-        // 即使登出API失败，也清除本地认证状态
-        state.isAuthenticated = false;
-        state.token = null;
         state.user = null;
         state.error = null;
       });
-  },
+  }
 });
 
-export const { clearError, debugLogin, clearAuth } = authSlice.actions;
+export const { clearError, clearAuth, debugLogin } = authSlice.actions;
 export default authSlice.reducer; 
