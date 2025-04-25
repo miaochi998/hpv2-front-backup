@@ -57,7 +57,7 @@ const AdminDashboard = () => {
         setError('数据加载失败，请刷新页面重试');
         message.error('仪表盘数据加载失败');
       } finally {
-        setLoading(false);
+      setLoading(false);
       }
     };
     
@@ -95,7 +95,7 @@ const AdminDashboard = () => {
   // 获取头像完整URL
   const avatarUrl = getAvatarUrl(profile?.avatar);
   console.log('头像URL:', avatarUrl);
-
+  
   return (
     <div className={styles.dashboard}>
       <Row gutter={[24, 24]}>
@@ -187,7 +187,7 @@ const AdminDashboard = () => {
             </div>
           </Card>
         </Col>
-        
+      
         {/* 用户信息卡片 */}
         <Col xs={24} lg={12}>
           <Card className={styles.infoCard}>
@@ -251,7 +251,7 @@ const SellerDashboard = () => {
         setError('数据加载失败，请刷新页面重试');
         message.error('仪表盘数据加载失败');
       } finally {
-        setLoading(false);
+      setLoading(false);
       }
     };
     
@@ -289,7 +289,7 @@ const SellerDashboard = () => {
   // 获取头像完整URL
   const avatarUrl = getAvatarUrl(profile?.avatar);
   console.log('头像URL:', avatarUrl);
-
+  
   return (
     <div className={styles.dashboard}>
       <Row gutter={[24, 24]}>
@@ -367,7 +367,7 @@ const Dashboard = () => {
       setLoading(false);
     }
   }, [user]);
-  
+
   if (loading) {
     return (
       <div className={styles.loadingContainer}>

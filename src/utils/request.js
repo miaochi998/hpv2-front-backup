@@ -1,8 +1,10 @@
 import axios from 'axios';
 import { message } from 'antd';
+import { getApiBaseUrl } from '../config/urls';
 
-// 从环境变量获取API基础URL，如果未设置则使用当前域名
-const baseURL = import.meta.env.VITE_API_BASE_URL || '';
+// 从集中配置获取API基础URL
+const baseURL = getApiBaseUrl();
+
 // 添加详细的环境信息日志
 console.log('API配置信息:', { 
   baseURL, 
@@ -17,7 +19,7 @@ const TOKEN_KEY = 'auth_token';
 // 创建axios实例
 const request = axios.create({
   baseURL,
-  timeout: 15000, // 15秒超时
+  timeout: 30000, // 30秒超时，提高网络稳定性
 });
 
 // 获取本地存储中的token
@@ -29,6 +31,14 @@ export const setToken = (token) => localStorage.setItem(TOKEN_KEY, token);
 // 移除本地存储中的token
 export const removeToken = () => localStorage.removeItem(TOKEN_KEY);
 
+// 是否已经显示过Token过期提示
+let hasShownTokenExpiredTip = false;
+
+// 重置Token过期提示标志
+export const resetTokenExpiredTip = () => {
+  hasShownTokenExpiredTip = false;
+};
+
 // 请求拦截器 - 添加认证token
 request.interceptors.request.use(
   (config) => {
@@ -37,6 +47,9 @@ request.interceptors.request.use(
     if (token) {
       // 设置Authorization请求头
       config.headers.Authorization = `Bearer ${token}`;
+      console.log(`[AUTH DEBUG] 发送请求附带token: ${token.substring(0, 10)}...`);
+    } else {
+      console.log('[AUTH DEBUG] 请求未附带token，用户可能未登录');
     }
     
     // 添加调试日志
@@ -69,7 +82,7 @@ request.interceptors.response.use(
     
     // 检查后端响应格式
     const { data } = response;
-    if (data.code === 200) {
+    if (data.code === 200 || data.code === 0 || !data.code) {
       // 正常响应，返回数据
       return data;
     } else {
@@ -106,10 +119,38 @@ request.interceptors.response.use(
       console.log(`错误状态码: ${status}`, error.response.data);
       
       if (status === 401) {
+        // 记录详细的401错误信息
+        console.error('[AUTH DEBUG] 接收到401错误:', {
+          url: error.config?.url,
+          headers: error.response.headers,
+          responseData: error.response.data
+        });
+        
         // 未授权 - 清除token并重定向到登录页
         removeToken();
+        
+        // 防止多次显示Token过期提示
+        if (!hasShownTokenExpiredTip) {
         message.error('登录已过期，请重新登录');
-        window.location.href = '/login';
+          hasShownTokenExpiredTip = true;
+          
+          // 5秒后重置标志，允许再次显示提示
+          setTimeout(() => {
+            hasShownTokenExpiredTip = false;
+          }, 5000);
+        }
+        
+        // 如果不是在登录页，则跳转到登录页
+        if (window.location.pathname !== '/login') {
+          console.log('[AUTH DEBUG] 重定向到登录页面，当前路径:', window.location.pathname);
+          
+          // 保存当前路径，以便登录后可以返回
+          const currentPath = window.location.pathname;
+          sessionStorage.setItem('redirect_after_login', currentPath);
+          
+          // 使用replace而不是href，以避免在历史中保留重定向前的页面
+          window.location.replace('/login');
+        }
       } else if (status === 403) {
         message.error('您没有权限执行此操作');
       } else if (status === 500) {

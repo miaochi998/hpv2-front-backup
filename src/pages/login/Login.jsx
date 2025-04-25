@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Form, Input, Button, message, Card, Typography, Spin, Checkbox, Alert } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { useDispatch } from 'react-redux';
 import { clearAuth, debugLogin } from '@/store/slices/authSlice';
@@ -78,6 +78,7 @@ const Login = () => {
   );
   
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useDispatch();
   const [form] = Form.useForm();
   
@@ -146,9 +147,22 @@ const Login = () => {
           // 登录成功
           message.success('登录成功');
           
-          // 跳转到仪表盘
+          // 检查是否有保存的重定向路径
+          const redirectPath = sessionStorage.getItem('redirect_after_login');
+          
+          // 延迟跳转以确保用户看到成功消息
           setTimeout(() => {
-            navigate('/protected/dashboard', { replace: true });
+            // 如果有重定向路径，使用它并清除存储
+            if (redirectPath) {
+              console.log('[Login] 登录成功，重定向到保存的路径:', redirectPath);
+              sessionStorage.removeItem('redirect_after_login');
+              navigate(redirectPath);
+            } else {
+              // 否则使用location.state中的from或默认到dashboard
+              const from = location.state?.from || '/protected/dashboard';
+              console.log('[Login] 登录成功，重定向到:', from);
+              navigate(from);
+            }
           }, 500);
         } catch (userInfoError) {
           setErrorMessage('获取用户信息失败，请稍后重试');

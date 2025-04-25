@@ -61,7 +61,7 @@ const Sidebar = () => {
     // 基础菜单(所有用户都有)
     const baseMenuItems = [
       {
-        key: '/dashboard',
+        key: '/protected/dashboard',
         icon: <DashboardOutlined />,
         label: '仪表盘'
       }
@@ -70,22 +70,22 @@ const Sidebar = () => {
     // 管理员菜单
     const adminMenuItems = isAdmin ? [
       {
-        key: '/admin/products',
+        key: '/protected/admin/products',
         icon: <AppstoreOutlined />,
         label: '总货盘管理'
       },
       {
-        key: '/admin/sales-pallets',
+        key: '/protected/admin/sales-pallets',
         icon: <WindowsOutlined />,
         label: '查看销售货盘'
       },
       {
-        key: '/admin/brands',
+        key: '/protected/admin/brands',
         icon: <TagOutlined />,
         label: '品牌管理'
       },
       {
-        key: '/admin/users',
+        key: '/protected/admin/users',
         icon: <UserOutlined />,
         label: '用户管理'
       }
@@ -94,12 +94,12 @@ const Sidebar = () => {
     // 销售员菜单
     const sellerMenuItems = !isAdmin ? [
       {
-        key: '/seller/products',
+        key: '/protected/seller/products',
         icon: <AppstoreOutlined />,
         label: '货盘管理'
       },
       {
-        key: '/seller/company-pallets',
+        key: '/protected/seller/company-pallets',
         icon: <WindowsOutlined />,
         label: '查看公司货盘'
       }
@@ -108,7 +108,7 @@ const Sidebar = () => {
     // 公共菜单(位于底部)
     const commonMenuItems = [
       {
-        key: '/recyclebin',
+        key: '/protected/recyclebin',
         icon: <EnvironmentOutlined />,
         label: '货盘回收站'
       },

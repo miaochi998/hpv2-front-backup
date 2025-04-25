@@ -225,7 +225,7 @@ Nginx配置已经完成，用于生产环境访问：
 
 | 任务 | 说明 | 状态 | 完成日期 | 备注 |
 |------|------|------|----------|------|
-| 1. 品牌管理 | 实现品牌列表、新增、编辑、删除功能 | 未开始 | - | 管理员专属功能 |
+| 1. 品牌管理 | 实现品牌列表、新增、编辑、删除功能 | 已完成 | - | 管理员专属功能 |
 | 2. 用户管理 | 实现用户列表、新增、编辑、删除功能 | 未开始 | - | 包含角色分配功能 |
 | 3. 公司货盘管理 | 实现公司货盘列表、详情、编辑功能 | 未开始 | - | 所有产品的管理 |
 | 4. 数据统计 | 实现管理员数据统计和图表 | 未开始 | - | 使用Ant Design Charts |
@@ -308,107 +308,198 @@ Nginx配置已经完成，用于生产环境访问：
 
 ## 开发日志
 
-### 2025-04-23：项目初始化
+### 2023年11月25日 - 初始化项目
+- 创建项目基础结构
+- 配置React路由
+- 设置Redux store
+- 实现基础UI组件
 
-1. 使用Vite创建React项目基础结构
-2. 安装和配置核心依赖库：React Router、Ant Design、Redux Toolkit等
-3. 设置项目的基本目录结构
-4. 配置开发和生产环境变量
-5. 配置ESLint和Prettier规则
-6. 实现基本的API请求封装（request.js）
-7. 初始化路由配置
-8. 实现基本的Redux存储和认证状态管理
+### 2023年11月26日 - 用户认证
+- 实现登录页面
+- 添加JWT认证
+- 配置路由保护
 
-### 2025-04-24：登录系统实现与优化
+### 2023年11月27日 - 主布局和导航
+- 实现侧边导航
+- 创建主布局
 
-1. **问题识别**：
-   - 发现登录页面存在"一闪而过"的问题，页面在未登录状态下会短暂显示仪表盘然后跳转回登录页
-   - 登录失败时没有正确显示错误消息并自动刷新页面
-   - 登录成功后Redux状态没有正确更新
+### 2023年11月30日 - 修复导航跳转问题
+**问题描述**：管理员登录后点击左侧品牌管理，会跳转到登录页面
 
-2. **问题分析**：
-   - 分析了路由配置和权限验证组件
-   - 检查了Redux状态管理逻辑
-   - 分析了登录组件实现
-   - 发现多个登录页面组件存在冗余和不一致情况
+**解决方案**：
+1. 修复路由匹配问题：
+   - 侧边栏菜单项的路径需要与路由配置中的路径一致
+   - 更新了Sidebar.jsx中的路径前缀，确保使用正确的"/protected/"前缀
 
-3. **解决方案**：
-   - 重构登录系统
-   - 创建标准命名的`Login.jsx`组件，替代旧的多个登录页面组件
-   - 优化Redux状态更新逻辑，确保登录成功后状态正确
-   - 简化路由配置，统一页面重定向逻辑
-   - 添加错误处理和消息提示
-   - 清理HTML中的冗余代码，将所有登录逻辑集中在React组件中
+2. 增强身份验证流程：
+   - 改进了PrivateRoute组件，添加更详细的日志记录，便于排查
+   - 修改request.js中的401错误处理，记录详细日志，并保存当前路径以便登录后返回
+   - 优化Login组件中的重定向逻辑，支持从sessionStorage中读取保存的重定向路径
 
-4. **实现细节**：
-   - 创建了新的`Login.jsx`组件，包含完整的登录逻辑
-   - 优化了状态管理，确保登录时正确更新Redux状态
-   - 添加了更友好的错误处理和消息提示
-   - 实现了"记住用户名"功能
-   - 移除了HTML中的登录检查脚本，保持代码简洁和关注点分离
-   - 删除了不再使用的旧登录页面组件
+3. 测试验证：
+   - 重启前端服务并测试成功
 
-5. **成果**：
-   - 解决了页面"一闪而过"的问题
-   - 修复了登录失败时的错误处理逻辑
-   - 登录成功后能正确导航到仪表盘
-   - 代码结构更加清晰和可维护
-   - 简化了HTML结构，遵循最佳实践
+**通用解决方法，避免未来类似问题**：
+1. 路径匹配规则：
+   - 确保侧边栏菜单项路径与router/index.jsx中定义的路径匹配
+   - 所有受保护的路由应使用"/protected/"前缀
+   - 使用PrivateRoute组件包装需要身份验证的页面
 
-### 2025-04-24：仪表盘页面开发与头像显示问题解决
+2. 身份验证与重定向：
+   - 身份验证失败时保存当前路径到sessionStorage
+   - 登录成功后从sessionStorage获取保存的路径并重定向
+   - 使用console.log记录关键流程，便于调试
 
-1. **仪表盘开发**：
-   - 实现了基础的管理员仪表盘和销售员仪表盘视图
-   - 实现了根据用户角色动态渲染不同仪表盘的逻辑
-   - 添加了个人信息卡片、货盘信息卡片、管理员信息卡片等
+3. 开发新页面步骤：
+   - 在router/index.jsx中添加正确的路由配置，包含"/protected/"前缀
+   - 在Sidebar.jsx中添加对应的菜单项，确保路径完全匹配
+   - 在页面组件中确保正确处理身份验证
 
-2. **问题识别**：仪表盘页面头像无法显示
-   - 页面控制台报错：`GET http://192.168.2.9:6016/uploads/images/c4659851-4171-45c8-a673-4faea5fd1f09.jpg net::ERR_BLOCKED_BY_RESPONSE.NotSameOrigin 200 (OK)`
-   - 浏览器跨域安全策略(CORS)阻止了前端页面从后端加载头像图片资源
+### 2023年12月01日 - 品牌管理功能开发
 
-3. **问题分析**：
-   - 检查了`Dashboard.jsx`组件中的头像URL生成逻辑
-   - 检查了后端`app.js`中的静态资源服务配置
-   - 发现后端静态资源中间件配置中CORS设置的问题：
-     - 使用了`Access-Control-Allow-Origin: *`通配符设置
-     - 没有配置`Access-Control-Allow-Credentials: true`头
-     - 导致浏览器因安全策略无法正确加载头像资源
+### 2025年4月25日 - 解决跨域资源加载问题
 
-4. **解决方案**：
-   - 后端修改：
-     - 修改`app.js`中静态资源中间件的CORS配置
-     - 从使用通配符`*`改为使用具体的白名单域名列表
-     - 添加`Access-Control-Allow-Credentials: true`头，支持携带凭证的请求
-     - 根据请求来源动态设置允许的源
-   - 前端修改：
-     - 在`Dashboard.jsx`的Avatar组件中添加`crossOrigin="anonymous"`属性
-     - 对所有涉及跨域资源的Avatar组件进行同样修改
+**问题描述**：
+1. 生产环境（http://hpfront.bonnei.com:6015）无法加载后端服务器（http://192.168.2.9:6016）上的图片资源
+2. 开发环境（http://192.168.2.9:6017）编辑品牌时无法加载后端图片资源
+3. 浏览器报错：
+   - 生产环境：`ERR_BLOCKED_BY_RESPONSE.NotSameOrigin`
+   - 开发环境：`GET http://192.168.2.9:6017/uploads/images/xxx.jpg 404 (Not Found)`
 
-5. **实现流程**：
-   - 使用grep搜索找到后端处理uploads的中间件配置
-   - 修改了`hpv2-hou/src/app.js`中的CORS配置
-   - 修改了`hpv2-front/src/pages/dashboard/Dashboard.jsx`中的Avatar组件
-   - 使用PM2重启前后端服务应用修改
+**原因分析**：
+1. 浏览器同源策略限制跨域请求
+2. 前端代码中的图片URL处理逻辑问题：
+   - 生产环境：完整URL在Nginx处理时缺少必要的CORS头部
+   - 开发环境：相对路径没有正确拼接API基础URL，导致请求错误端口
+3. 开发环境依赖Vite代理的问题，有时代理配置不生效
 
-6. **成果**：
-   - 解决了头像无法显示的问题
-   - 确保了跨域资源共享安全性（仅允许特定域名访问）
-   - 改进了系统对资源加载的错误处理
-   - 完成了仪表盘页面的全部功能开发，当前功能已经完全满足项目需求
+**解决步骤**：
 
-7. **教训与最佳实践**：
-   - 跨域资源处理需特别注意CORS策略配置
-   - 避免使用通配符`*`配置CORS，应明确指定允许的域名
-   - 涉及敏感资源或带凭证请求时，必须使用具体域名而非通配符
-   - 对于图片等资源，应在React组件中添加适当的crossOrigin属性
-   - 资源加载问题可通过浏览器开发者工具中的网络和控制台面板诊断
+1. 创建集中式URL管理模块（`src/config/urls.js`）：
+   ```javascript
+   // 获取API基础URL
+   export const getApiBaseUrl = () => {
+     if (import.meta.env.VITE_API_BASE_URL) {
+       return import.meta.env.VITE_API_BASE_URL;
+     }
+     
+     const { hostname } = window.location;
+     const isProduction = hostname.includes('bonnei.com');
+     
+     if (isProduction) {
+       return 'http://192.168.2.9:6016';
+     } else {
+       const { protocol, hostname } = window.location;
+       return `${protocol}//${hostname}:6016`;
+     }
+   };
 
-### 后续计划
+   // 获取图片URL的函数
+   export const getImageUrl = (imagePath, params = '') => {
+     if (!imagePath) return null;
+     if (imagePath.startsWith('http')) return imagePath + params;
+     
+     if (!imagePath.startsWith('/')) {
+       imagePath = `/${imagePath}`;
+     }
+     
+     // 优先使用环境变量中的图片基础URL
+     let baseUrl = '';
+     if (import.meta.env.VITE_IMAGE_BASE_URL) {
+       baseUrl = import.meta.env.VITE_IMAGE_BASE_URL;
+     } else {
+       baseUrl = getApiBaseUrl();
+     }
+     
+     // 返回完整URL
+     return `${baseUrl}${imagePath}${params}`;
+   };
+   ```
 
-下一阶段将重点实现以下功能：
-1. 通用表格和表单组件的封装
-2. 开始实现管理员相关功能（品牌管理、用户管理等）
-3. 销售员功能模块开发（货盘管理等）
+2. 创建环境变量配置文件：
+   - 开发环境（`.env.development`）：
+     ```
+     VITE_API_BASE_URL=http://192.168.2.9:6016
+     VITE_IMAGE_BASE_URL=http://192.168.2.9:6016
+     VITE_ENV=development
+     ```
+   - 生产环境（`.env.production`）：
+     ```
+     VITE_API_BASE_URL=http://192.168.2.9:6016
+     VITE_IMAGE_BASE_URL=http://192.168.2.9:6016
+     VITE_ENV=production
+     ```
+
+3. 修改使用图片URL的组件，如`BrandCard.jsx`：
+   ```javascript
+   import { getImageUrl } from '../../config/urls';
+   
+   // 在组件内使用
+   const getBrandImageUrl = () => {
+     if (!brand?.logo_url) return null;
+     
+     // 添加缓存破坏参数
+     const cacheVer = getCacheVersion();
+     const timestamp = forceUpdate;
+     const params = `?_v=${cacheVer}&_t=${timestamp}`;
+     
+     // 使用集中配置的URL生成函数
+     return getImageUrl(brand.logo_url, params);
+   };
+   ```
+
+4. 配置Nginx反向代理（生产环境）：
+   ```nginx
+   # 上传文件代理配置
+   location /uploads/ {
+       proxy_pass http://192.168.2.9:6016;
+       proxy_set_header Host $host;
+       proxy_set_header X-Real-IP $remote_addr;
+       proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+       proxy_set_header X-Forwarded-Proto $scheme;
+       expires 7d;  # 图片缓存7天
+       proxy_cache_valid 200 304 7d;
+       proxy_cache_valid any 1m;
+   }
+   ```
+
+5. 后端静态资源服务配置：
+   ```javascript
+   // 静态文件服务 - 添加CORS头部
+   app.use('/uploads', (req, res, next) => {
+     // 设置允许任何来源访问图片资源
+     res.header('Access-Control-Allow-Origin', '*');
+     res.header('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+     res.header('Access-Control-Allow-Headers', '*');
+     
+     // 明确禁用所有可能阻止跨域资源共享的安全策略
+     res.removeHeader('Cross-Origin-Resource-Policy');
+     res.removeHeader('Cross-Origin-Embedder-Policy');
+     
+     // 禁用内容安全策略头
+     res.removeHeader('Content-Security-Policy');
+     res.removeHeader('X-Content-Security-Policy');
+     
+     next();
+   }, express.static(path.join(__dirname, 'uploads')));
+   ```
+
+**测试结果**：
+1. 生产环境：图片可以正常加载，没有跨域错误
+2. 开发环境：编辑品牌Logo时正常显示图片预览，没有404错误
+
+**经验总结与未来避免措施**：
+1. **集中配置**：始终使用集中式URL管理，避免在各组件中硬编码URL路径
+2. **环境变量**：通过环境变量区分不同环境，提高配置灵活性
+3. **完整URL**：对于跨域资源，始终使用完整URL而不是相对路径
+4. **缓存控制**：添加缓存破坏参数，确保资源更新时能够刷新
+5. **后端配置**：确保后端正确设置CORS头部，特别是对于静态资源
+6. **代理设置**：在开发环境中，不要完全依赖代理功能，直接使用完整URL更可靠
+7. **日志记录**：添加详细的URL生成日志，便于调试和排查问题
+8. **文档记录**：将解决方案记录在专门的文档中，如`cross_domain_image_loading_solution.md`
+
+**相关文档**：
+- [跨域资源加载解决方案](../hpv2-front/Docs/cross_domain_image_loading_solution.md) - 详细记录了问题分析和解决方案
 
 ## 问题记录与解决方案
 
@@ -416,6 +507,8 @@ Nginx配置已经完成，用于生产环境访问：
 |------|----------|----------|------|
 | 2025-04-24 | 登录页面"一闪而过"，登录失败时错误处理不完善 | 重构登录组件，优化路由和状态管理逻辑 | 已解决 |
 | 2025-04-24 | 仪表盘页面头像无法显示，浏览器报CORS错误 | 修改后端静态资源中间件CORS配置，前端组件添加crossOrigin属性 | 已解决 |
+| 2025-04-25 | 生产环境图片资源跨域加载失败，报错NotSameOrigin | 实现集中式URL管理，添加Nginx代理，配置后端CORS头部 | 已解决 |
+| 2025-04-25 | 开发环境编辑品牌时图片404错误 | 修改URL生成逻辑，使用环境变量，始终返回完整URL | 已解决 |
 
 ## 周报
 
@@ -643,6 +736,11 @@ npm run pm2:logs
          target: 'http://localhost:6016',
          changeOrigin: true,
          secure: false
+       },
+       '/uploads': {
+         target: 'http://192.168.2.9:6016',
+         changeOrigin: true,
+         secure: false
        }
      }
    }
@@ -661,16 +759,30 @@ npm run pm2:logs
 
 3. **静态资源访问**
    - 对于图片等静态资源，需要确保CORS头部配置正确
-   - 通常问题出现在`/uploads`目录访问时
-   - 解决方案是在后端静态资源中间件中正确设置CORS头部
+   - 针对`/uploads`目录的静态资源访问，我们采用了两种解决方案：
+     - **生产环境**：使用Nginx反向代理从同源转发
+     - **开发环境**：直接访问完整URL（利用后端的CORS配置）
 
-4. **排查步骤**
+4. **集中式URL管理**
+   - 创建`src/config/urls.js`模块，集中管理所有URL
+   - 提供`getApiBaseUrl`和`getImageUrl`等工具函数
+   - 优先使用环境变量配置
+
+5. **排查步骤**
    - 查看浏览器控制台网络请求错误
    - 检查请求头和响应头中的CORS相关字段
-   - 确认请求源是否在后端允许列表中
-   - 对于不同类型资源可能需要不同的CORS策略
+   - 使用开发者工具网络面板筛选失败的请求
+   - 观察请求URL是否正确（特别是端口号）
+   - 查看控制台中的`[URL CONFIG]`日志信息
 
-### 环境切换与测试
+6. **重要经验**
+   - 不要混用相对路径和绝对路径
+   - 不要过度依赖开发代理功能
+   - 通过日志记录请求URL来调试问题
+   - 环境变量配置比硬编码更灵活可靠
+   - 修改后记得重启服务和清除浏览器缓存
+
+## 环境切换与测试
 
 1. **开发环境与生产环境切换**
    - 开发环境访问：http://192.168.2.9:6017

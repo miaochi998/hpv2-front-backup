@@ -20,10 +20,25 @@ const MainLayout = () => {
   // 获取用户信息
   useEffect(() => {
     if (!user) {
-      console.log('MainLayout: 用户信息未加载，尝试获取');
-      dispatch(getUserInfoAsync());
+      console.log('[MainLayout] 用户信息未加载，尝试获取');
+      dispatch(getUserInfoAsync())
+        .unwrap()
+        .then(userData => {
+          console.log('[MainLayout] 成功获取到用户信息:', {
+            id: userData.id,
+            name: userData.name,
+            is_admin: userData.is_admin
+          });
+        })
+        .catch(error => {
+          console.error('[MainLayout] 获取用户信息失败:', error);
+        });
     } else {
-      console.log('MainLayout: 用户信息已加载', user);
+      console.log('[MainLayout] 用户信息已加载', {
+        id: user.id,
+        name: user.name,
+        is_admin: user.is_admin
+      });
     }
   }, [dispatch, user]);
 
