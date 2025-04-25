@@ -36,9 +36,10 @@ export const getCacheVersion = () => {
  * 获取品牌列表
  * @param {Object} params - 查询参数
  * @param {number} params.page - 页码
- * @param {number} params.pageSize - 每页条数
- * @param {string} params.keyword - 搜索关键词
+ * @param {number} params.page_size - 每页条数
  * @param {string} params.status - 状态过滤
+ * @param {string} params.sort_by - 排序字段
+ * @param {string} params.sort_order - 排序方式
  * @returns {Promise<Object>} 品牌列表数据
  */
 export const getBrands = (params) => {
@@ -47,6 +48,27 @@ export const getBrands = (params) => {
     ...params,
     _cache: CACHE_VERSION
   };
+  
+  // 确保分页参数存在且有效
+  if (!paramsWithCache.page) {
+    paramsWithCache.page = 1;
+  }
+  
+  if (!paramsWithCache.page_size) {
+    paramsWithCache.page_size = 10;
+  }
+  
+  // 确保排序参数存在且有效
+  if (!paramsWithCache.sort_by) {
+    paramsWithCache.sort_by = 'updated_at';
+  }
+  
+  if (!paramsWithCache.sort_order) {
+    paramsWithCache.sort_order = 'desc';
+  }
+  
+  console.log('[API] 获取品牌列表，参数：', paramsWithCache);
+  
   return request({
     url: '/api/pallet/brands',
     method: 'GET',

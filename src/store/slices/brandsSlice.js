@@ -15,7 +15,7 @@ const initialState = {
   currentBrand: null,
   pagination: {
     current: 1,
-    pageSize: 12,
+    pageSize: 10,
     total: 0
   },
   filter: {
@@ -28,7 +28,16 @@ export const fetchBrands = createAsyncThunk(
   'brands/fetchBrands',
   async (params, { rejectWithValue }) => {
     try {
-      const response = await getBrands(params);
+      // 确保分页参数存在
+      const queryParams = {
+        page: params?.page || 1,
+        page_size: params?.pageSize || 10,
+        ...params
+      };
+      
+      console.log('[BRANDS SLICE] 获取品牌列表，参数:', queryParams);
+      
+      const response = await getBrands(queryParams);
       return response;
     } catch (error) {
       return rejectWithValue(error.message || '获取品牌列表失败');
@@ -91,11 +100,22 @@ export const updateBrandById = createAsyncThunk(
 // 异步Action: 删除品牌
 export const removeBrand = createAsyncThunk(
   'brands/removeBrand',
-  async (id, { rejectWithValue, dispatch }) => {
+  async (id, { rejectWithValue, dispatch, getState }) => {
     try {
       const response = await deleteBrand(id);
-      // 删除成功后刷新品牌列表
-      dispatch(fetchBrands());
+      
+      // 获取当前的分页和过滤参数
+      const state = getState();
+      const { pagination, filter } = state.brands;
+      
+      // 删除成功后使用当前分页大小刷新品牌列表
+      dispatch(fetchBrands({
+        page: 1, // 删除后返回第一页
+        page_size: pagination.pageSize, // 保持当前的每页数量
+        ...filter,
+        _t: Date.now() // 添加时间戳防止缓存
+      }));
+      
       return response;
     } catch (error) {
       // 检查错误信息中是否包含"无法删除：该品牌下存在产品"
@@ -115,11 +135,22 @@ export const removeBrand = createAsyncThunk(
 // 异步Action: 变更品牌状态
 export const toggleBrandStatusAction = createAsyncThunk(
   'brands/toggleStatus',
-  async ({ id, status }, { rejectWithValue, dispatch }) => {
+  async ({ id, status }, { rejectWithValue, dispatch, getState }) => {
     try {
       const response = await toggleBrandStatus(id, status);
-      // 状态变更成功后刷新品牌列表
-      dispatch(fetchBrands());
+      
+      // 获取当前的分页和过滤参数
+      const state = getState();
+      const { pagination, filter } = state.brands;
+      
+      // 状态变更成功后使用当前分页大小刷新品牌列表
+      dispatch(fetchBrands({
+        page: pagination.current,
+        page_size: pagination.pageSize,
+        ...filter,
+        _t: Date.now() // 添加时间戳防止缓存
+      }));
+      
       return response;
     } catch (error) {
       return rejectWithValue(error.message || '变更品牌状态失败');
@@ -157,9 +188,21 @@ const brandsSlice = createSlice({
       .addCase(fetchBrands.fulfilled, (state, action) => {
         state.loading = false;
         state.list = action.payload.data.list || [];
-        // 更新分页信息
-        if (action.payload.data.meta) {
-          state.pagination.total = action.payload.data.meta.total_count || 0;
+        
+        // 调试日志
+        console.log('[BRANDS SLICE] API返回数据:', action.payload.data);
+        
+        // 更新分页信息，只更新总数，保留当前页和页大小
+        const paginationData = action.payload.data.pagination || {};
+        
+        if (paginationData) {
+          // 使用后端返回的分页信息，但保留前端设置的当前页和页大小
+          state.pagination = {
+            ...state.pagination, // 保留现有的分页设置
+            total: paginationData.total || 0  // 只更新总数
+          };
+          
+          console.log('[BRANDS SLICE] 更新分页信息:', state.pagination);
         }
       })
       .addCase(fetchBrands.rejected, (state, action) => {

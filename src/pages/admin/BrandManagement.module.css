@@ -27,6 +27,9 @@
   margin-top: 24px;
   display: flex;
   justify-content: flex-end;
+  position: relative;
+  min-height: 70px;
+  overflow: visible !important;
 }
 
 .filters {
@@ -127,4 +130,21 @@
   .pagination {
     text-align: center;
   }
+}
+
+/* 确保下拉菜单能够正确显示 */
+:global(.ant-select-dropdown) {
+  position: fixed !important;
+  z-index: 1500 !important;
+}
+
+:global(.ant-pagination-options) {
+  overflow: visible !important;
+}
+
+/* 设置内容区域，确保有足够空间显示分页组件 */
+.content {
+  position: relative;
+  padding-bottom: 80px; /* 为分页组件预留空间 */
+  overflow: visible;
 } 

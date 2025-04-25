@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Typography, Button, Pagination, Space, Radio, Modal, App } from 'antd';
+import { Typography, Button, Space, Radio, Modal, App } from 'antd';
 import { PlusOutlined, ReloadOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
 import BrandGrid from '@/components/brand/BrandGrid';
 import AddBrandModal from '@/components/brand/AddBrandModal';
 import EditBrandModal from '@/components/brand/EditBrandModal';
 import DeleteBrandModal from '@/components/brand/DeleteBrandModal';
+import DataTable from '@/components/common/DataTable';
 import { 
   fetchBrands, 
   removeBrand, 
@@ -41,16 +42,6 @@ const BrandManagement = () => {
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   
-  // 添加本地状态维护品牌列表
-  const [localBrands, setLocalBrands] = useState([]);
-  
-  // 当Redux中的list更新时，同步到本地state
-  useEffect(() => {
-    if (list && list.length > 0) {
-      setLocalBrands(list);
-    }
-  }, [list]);
-  
   // 初始加载品牌列表
   useEffect(() => {
     console.log('[BRAND MANAGEMENT] 开始加载品牌列表', { 
@@ -75,6 +66,7 @@ const BrandManagement = () => {
       .then(response => {
         console.log('[BRAND MANAGEMENT] 品牌列表加载成功', { 
           count: response.data.list?.length || 0,
+          total: response.data.pagination?.total || 0,
           brands: response.data.list?.map(brand => ({
             id: brand.id,
             name: brand.name,
@@ -87,7 +79,7 @@ const BrandManagement = () => {
         console.error('[BRAND MANAGEMENT] 品牌列表加载失败', { error });
         message.error('加载品牌列表失败');
       });
-  }, [dispatch, pagination.current, pagination.pageSize, filter]);
+  }, [dispatch, filter, pagination.current, pagination.pageSize]);
   
   // 处理状态筛选变化
   const handleStatusFilterChange = (e) => {
@@ -95,8 +87,50 @@ const BrandManagement = () => {
   };
   
   // 处理分页变化
-  const handlePageChange = (page, pageSize) => {
-    dispatch(setPagination({ current: page, pageSize }));
+  const handleTableChange = (newPagination, filters, sorter) => {
+    console.log('[BRAND MANAGEMENT] 表格变化', { 
+      newPagination, 
+      currentPagination: pagination 
+    });
+    
+    // 检查是否是分页大小改变
+    const isPageSizeChanged = newPagination.pageSize !== pagination.pageSize;
+    
+    // 如果分页大小发生变化，总是将当前页设为1
+    const newCurrentPage = isPageSizeChanged ? 1 : newPagination.current;
+    
+    // 更新Redux中的分页信息
+    dispatch(setPagination({ 
+      current: newCurrentPage, 
+      pageSize: newPagination.pageSize 
+    }));
+    
+    // 构建查询参数
+    const params = {
+      page: newCurrentPage,
+      page_size: newPagination.pageSize,
+      ...filter
+    };
+    
+    // 添加排序参数
+    if (sorter && sorter.field) {
+      params.sort_by = sorter.field;
+      params.sort_order = sorter.order === 'ascend' ? 'asc' : 'desc';
+      
+      console.log('[BRAND MANAGEMENT] 排序变化', {
+        field: sorter.field,
+        order: sorter.order
+      });
+    } else {
+      // 默认排序
+      params.sort_by = 'updated_at';
+      params.sort_order = 'desc';
+    }
+    
+    console.log('[BRAND MANAGEMENT] 获取数据参数:', params);
+    
+    // 获取数据
+    dispatch(fetchBrands(params));
   };
   
   // 处理添加品牌
@@ -232,9 +266,29 @@ const BrandManagement = () => {
         });
     } else {
       // 普通刷新列表
-      handleRefreshList();
-      // 关闭所有弹窗
-      handleCloseModals();
+      const refreshParams = {
+        page: pagination.current,
+        page_size: pagination.pageSize,
+        ...filter,
+        sort_by: 'updated_at',
+        sort_order: 'desc',
+        _t: Date.now()
+      };
+      
+      console.log('[BRAND MANAGEMENT] 使用当前分页参数刷新列表', refreshParams);
+      
+      // 使用明确的参数调用刷新
+      dispatch(fetchBrands(refreshParams))
+        .unwrap()
+        .then(() => {
+          // 关闭所有弹窗
+          handleCloseModals();
+        })
+        .catch(error => {
+          console.error('[BRAND MANAGEMENT] 刷新失败', error);
+          // 关闭所有弹窗
+          handleCloseModals();
+        });
     }
   };
   
@@ -289,20 +343,32 @@ const BrandManagement = () => {
           onStatusChange={handleStatusChange}
         />
         
-        {/* 分页控制 */}
-        {pagination.total > 0 && (
-          <div className={styles.pagination}>
-            <Pagination
-              current={pagination.current}
-              pageSize={pagination.pageSize}
-              total={pagination.total}
-              onChange={handlePageChange}
-              showSizeChanger
-              showQuickJumper
-              showTotal={(total) => `共 ${total} 条记录`}
-            />
-          </div>
-        )}
+        {/* 分页控制 - 只显示分页，不显示表格 */}
+        <div style={{ 
+          marginTop: '24px', 
+          minHeight: '70px', 
+          position: 'relative',
+          overflow: 'visible'
+        }}>
+          <DataTable
+            showPagination={true}
+            showTable={false} // 不显示表格部分
+            dataSource={list}
+            columns={[]}
+            loading={loading}
+            pagination={{
+              current: pagination?.current || 1,
+              pageSize: pagination?.pageSize || 10,
+              total: pagination?.total || 0, // 使用后端返回的总数
+              showSizeChanger: true,
+              pageSizeOptions: ['10', '20', '50', '100'], // 设置页大小选项
+              showQuickJumper: true,
+              showTotal: (total) => `共 ${total} 条记录`,
+              style: { overflow: 'visible' }
+            }}
+            onChange={handleTableChange}
+          />
+        </div>
       </div>
       
       {/* 添加品牌弹窗 */}

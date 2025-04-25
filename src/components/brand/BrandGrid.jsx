@@ -38,7 +38,7 @@ const BrandGrid = ({
     <Spin spinning={loading} tip="加载中...">
       <Row gutter={[16, 16]}>
         {brands.map(brand => (
-          <Col xs={24} sm={12} md={8} lg={6} xl={4} key={brand.id}>
+          <Col xs={24} sm={12} md={8} lg={6} xl={4} key={brand.id} style={{ flex: '0 0 20%', maxWidth: '20%' }}>
             <BrandCard
               brand={brand}
               onEdit={onEditBrand}
