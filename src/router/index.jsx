@@ -24,7 +24,7 @@ const ProductManagement = lazy(() => import('@/pages/admin/ProductManagement'));
 
 // 销售员页面
 const SellerProducts = lazy(() => import('@/pages/seller/PalletManagement'));
-const ProfileManagement = lazy(() => import('@/pages/seller/ProfileManagement'));
+const ProfileManagement = lazy(() => import('@/pages/ProfileManagement'));
 
 // 创建路由
 const router = createBrowserRouter([
@@ -53,6 +53,14 @@ const router = createBrowserRouter([
         element: <PrivateRoute 
           element={lazyLoad(Dashboard)} 
           requiredRoles={[]} 
+        />
+      },
+      // 通用路由 - 对所有登录用户有效
+      {
+        path: 'profile',
+        element: <PrivateRoute 
+          element={lazyLoad(ProfileManagement)}
+          requiredRoles={[]} // 空数组表示所有角色都可访问
         />
       },
       // 管理员路由

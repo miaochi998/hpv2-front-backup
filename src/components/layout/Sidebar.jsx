@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { Layout, Menu, Avatar, Typography, Tooltip } from 'antd';
+import { Layout, Menu, Avatar, Typography, Tooltip, Button } from 'antd';
 import { 
   DashboardOutlined, 
   AppstoreOutlined, 
@@ -11,10 +11,11 @@ import {
   WindowsOutlined,
   EnvironmentOutlined,
   SettingOutlined,
-  MenuFoldOutlined,
-  MenuUnfoldOutlined
+  LeftOutlined,
+  RightOutlined
 } from '@ant-design/icons';
 import { logoutAsync } from '../../store/slices/authSlice';
+import { getImageUrl } from '../../config/urls';
 import styles from './Sidebar.module.css';
 
 const { Sider } = Layout;
@@ -45,6 +46,24 @@ const Sidebar = () => {
     dispatch(logoutAsync()).then(() => {
       navigate('/login');
     });
+  };
+  
+  // 处理个人资料编辑
+  const handleProfileEdit = () => {
+    navigate('/protected/profile');
+  };
+  
+  // 获取用户头像URL
+  const getAvatarUrl = () => {
+    if (!user || !user.avatar) return null;
+    
+    try {
+      // 避免头像缓存，添加时间戳
+      return getImageUrl(user.avatar, `?t=${Date.now()}`);
+    } catch (error) {
+      console.error('[Sidebar] 获取头像URL失败:', error);
+      return null;
+    }
   };
   
   // 菜单点击处理
@@ -111,11 +130,6 @@ const Sidebar = () => {
         key: '/protected/recyclebin',
         icon: <EnvironmentOutlined />,
         label: '货盘回收站'
-      },
-      {
-        key: 'logout',
-        icon: <LogoutOutlined />,
-        label: '退出登录'
       }
     ];
     
@@ -144,6 +158,11 @@ const Sidebar = () => {
         </div>
       </div>
       
+      {/* 折叠按钮 */}
+      <div className={styles.collapseButton} onClick={toggleCollapsed}>
+        {collapsed ? <RightOutlined /> : <LeftOutlined />}
+      </div>
+      
       {/* 导航菜单 */}
       <div className={styles.sidebarMenu}>
         <Menu
@@ -157,16 +176,79 @@ const Sidebar = () => {
       
       {/* 导航底部 */}
       <div className={styles.sidebarFooter}>
-        <div className={styles.userInfo}>
-          <Avatar icon={<UserOutlined />} size="small" className={styles.avatar} />
-          {!collapsed && (
-            <Text className={styles.userName}>{user?.name || '用户'}</Text>
-          )}
-        </div>
-        
-        <div className={styles.toggleButton} onClick={toggleCollapsed}>
-          {collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-        </div>
+        {collapsed ? (
+          // 窄导航模式：显示头像和退出按钮
+          <div className={styles.footerCollapsed}>
+            <Tooltip title="个人资料" placement="right">
+              <Avatar 
+                src={getAvatarUrl()} 
+                icon={!user?.avatar ? <UserOutlined /> : null} 
+                size={50} 
+                className={styles.avatar}
+                onClick={handleProfileEdit}
+              />
+            </Tooltip>
+            <Tooltip title="退出登录" placement="right">
+              <Button 
+                type="text" 
+                icon={<LogoutOutlined style={{ color: 'inherit' }} />} 
+                className={styles.logoutBtn}
+                onClick={handleLogout}
+                style={{ 
+                  color: 'rgba(255, 255, 255, 0.65)', 
+                  background: 'transparent'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = '#fff';
+                  e.currentTarget.style.background = 'transparent';
+                  e.currentTarget.style.textDecoration = 'underline';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = 'rgba(255, 255, 255, 0.65)';
+                  e.currentTarget.style.background = 'transparent';
+                  e.currentTarget.style.textDecoration = 'none';
+                }}
+              >
+                退出登录
+              </Button>
+            </Tooltip>
+          </div>
+        ) : (
+          // 宽导航模式：显示头像、用户名和退出登录
+          <div className={styles.footerExpanded}>
+            <div className={styles.userInfoVertical} onClick={handleProfileEdit}>
+              <Avatar 
+                src={getAvatarUrl()} 
+                icon={!user?.avatar ? <UserOutlined /> : null}
+                size={50} 
+                className={styles.avatarLarge} 
+              />
+              <Text className={styles.userName}>{user?.name || '用户'}</Text>
+            </div>
+            <Button 
+              type="text" 
+              icon={<LogoutOutlined style={{ color: 'inherit' }} />} 
+              className={styles.logoutBtn}
+              onClick={handleLogout}
+              style={{ 
+                color: 'rgba(255, 255, 255, 0.65)', 
+                background: 'transparent'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = '#fff';
+                e.currentTarget.style.background = 'transparent';
+                e.currentTarget.style.textDecoration = 'underline';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = 'rgba(255, 255, 255, 0.65)';
+                e.currentTarget.style.background = 'transparent';
+                e.currentTarget.style.textDecoration = 'none';
+              }}
+            >
+              退出登录
+            </Button>
+          </div>
+        )}
       </div>
     </Sider>
   );

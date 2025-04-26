@@ -32,33 +32,103 @@
   font-weight: bold;
 }
 
+/* 折叠按钮样式 */
+.collapseButton {
+  position: absolute;
+  right: -6px;
+  top: 576px;
+  width: 12px;
+  height: 24px;
+  background-color: #001529;
+  color: rgba(255, 255, 255, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-radius: 12px;
+  z-index: 999;
+  transition: color 0.3s ease, background-color 0.3s ease;
+  border: 1px solid #303030;
+}
+
+.collapseButton:hover {
+  color: #fff;
+  background-color: #1890ff;
+}
+
 .sidebarMenu {
-  height: calc(100vh - 128px);
+  height: calc(100vh - 240px);
   overflow-y: auto;
   overflow-x: hidden;
+  margin-bottom: 10px;
 }
 
 .sidebarFooter {
-  height: 64px;
+  height: 140px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  padding: 20px 16px 10px;
+  color: rgba(255, 255, 255, 0.65);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  position: absolute;
+  bottom: 30px;
+  left: 0;
+  right: 0;
+}
+
+/* 收起状态的底部样式 */
+.footerCollapsed {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  padding: 16px;
-  color: rgba(255, 255, 255, 0.65);
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  gap: 20px;
 }
 
+/* 展开状态的底部样式 */
+.footerExpanded {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  align-items: center;
+}
+
+/* 水平排列的用户信息 */
 .userInfo {
   display: flex;
   align-items: center;
   width: 100%;
-  margin-bottom: 10px;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background-color 0.3s;
+}
+
+/* 垂直排列的用户信息 */
+.userInfoVertical {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background-color 0.3s;
+  width: 100%;
+}
+
+.userInfoVertical:hover, .userInfo:hover {
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
 .avatar {
-  margin-right: 8px;
   background-color: #1890ff;
+  cursor: pointer;
+}
+
+.avatarLarge {
+  background-color: #1890ff;
+  cursor: pointer;
+  margin-bottom: 12px;
 }
 
 .userName {
@@ -66,15 +136,16 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.toggleButton {
-  cursor: pointer;
-  font-size: 16px;
-  width: 100%;
   text-align: center;
 }
 
-.toggleButton:hover {
-  color: #fff;
-} 
+.logoutBtn {
+  color: rgba(255, 255, 255, 0.65);
+  padding: 4px 8px;
+  height: auto;
+  width: 100%;
+  text-align: center;
+  background: transparent !important;
+}
+
+/* 完全移除hover样式，使用React的事件处理来控制 */ 

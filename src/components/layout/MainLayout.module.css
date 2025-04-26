@@ -7,6 +7,10 @@
   transition: all 0.2s;
 }
 
+.rightLayoutExpanded {
+  margin-left: 80px;
+}
+
 .loadingContainer {
   display: flex;
   justify-content: center;

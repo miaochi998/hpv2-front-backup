@@ -23,13 +23,23 @@ const request = axios.create({
 });
 
 // 获取本地存储中的token
-export const getToken = () => localStorage.getItem(TOKEN_KEY);
+export const getToken = () => {
+  const token = localStorage.getItem(TOKEN_KEY);
+  console.log(`[REQUEST] 获取token: ${token ? `${token.substring(0, 10)}...` : 'null'}`);
+  return token;
+};
 
 // 设置本地存储中的token
-export const setToken = (token) => localStorage.setItem(TOKEN_KEY, token);
+export const setToken = (token) => {
+  console.log(`[REQUEST] 设置token: ${token ? `${token.substring(0, 10)}...` : 'null'}`);
+  localStorage.setItem(TOKEN_KEY, token);
+};
 
 // 移除本地存储中的token
-export const removeToken = () => localStorage.removeItem(TOKEN_KEY);
+export const removeToken = () => {
+  console.log('[REQUEST] 移除token');
+  localStorage.removeItem(TOKEN_KEY);
+};
 
 // 是否已经显示过Token过期提示
 let hasShownTokenExpiredTip = false;
@@ -47,9 +57,15 @@ request.interceptors.request.use(
     if (token) {
       // 设置Authorization请求头
       config.headers.Authorization = `Bearer ${token}`;
-      console.log(`[AUTH DEBUG] 发送请求附带token: ${token.substring(0, 10)}...`);
+      console.log(`[AUTH DEBUG] 发送请求附带token: ${token.substring(0, 10)}...`, {
+        url: config.url,
+        method: config.method
+      });
     } else {
-      console.log('[AUTH DEBUG] 请求未附带token，用户可能未登录');
+      console.log('[AUTH DEBUG] 请求未附带token，用户可能未登录', {
+        url: config.url,
+        method: config.method
+      });
     }
     
     // 添加调试日志
@@ -131,7 +147,7 @@ request.interceptors.response.use(
         
         // 防止多次显示Token过期提示
         if (!hasShownTokenExpiredTip) {
-        message.error('登录已过期，请重新登录');
+          message.error('登录已过期，请重新登录');
           hasShownTokenExpiredTip = true;
           
           // 5秒后重置标志，允许再次显示提示
