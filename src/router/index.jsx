@@ -20,6 +20,7 @@ const Unauthorized = lazy(() => import('@/pages/Unauthorized'));
 // 管理员页面
 const BrandManagement = lazy(() => import('@/pages/admin/BrandManagement'));
 const UserManagement = lazy(() => import('@/pages/admin/UserManagement'));
+const AdminManagement = lazy(() => import('@/pages/admin/AdminManagement'));
 const ProductManagement = lazy(() => import('@/pages/admin/ProductManagement'));
 
 // 销售员页面
@@ -78,6 +79,13 @@ const router = createBrowserRouter([
             path: 'users', 
             element: <PrivateRoute 
               element={lazyLoad(UserManagement)} 
+              requiredRoles={['admin']} 
+            />
+          },
+          { 
+            path: 'admins', 
+            element: <PrivateRoute 
+              element={lazyLoad(AdminManagement)} 
               requiredRoles={['admin']} 
             />
           },

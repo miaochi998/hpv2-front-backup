@@ -107,6 +107,11 @@ const Sidebar = () => {
         key: '/protected/admin/users',
         icon: <UserOutlined />,
         label: '用户管理'
+      },
+      {
+        key: '/protected/admin/admins',
+        icon: <SettingOutlined />,
+        label: '管理员管理'
       }
     ] : [];
     

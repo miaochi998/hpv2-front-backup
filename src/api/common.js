@@ -35,24 +35,41 @@ export const updatePaginationSettings = (data) => {
 
 /**
  * 通用搜索接口
- * 
- * @param {Object} params - 搜索参数
- * @param {string} params.keyword - 搜索关键词
- * @param {string} params.entity_type - 实体类型
- * @param {number} params.page - 页码
- * @param {number} params.page_size - 每页条数
- * @returns {Promise<Object>} 搜索结果
+ * @param {string} module - 搜索模块名称 
+ * @param {string} keyword - 搜索关键字
+ * @param {string} fields - 搜索字段，逗号分隔
+ * @param {boolean} exact - 是否精确匹配
+ * @param {object} additionalParams - 附加参数
+ * @returns {Promise} - 返回搜索结果
  */
-export const search = (params) => {
+export const commonSearch = (module, keyword, fields, exact = false, additionalParams = {}) => {
   return request({
-    url: '/common/search',
-    method: 'GET',
-    params
+    url: '/api/common/search',
+    method: 'get',
+    params: {
+      module,
+      keyword,
+      fields,
+      exact,
+      ...additionalParams
+    }
+  });
+};
+
+/**
+ * 获取可搜索字段
+ * @returns {Promise} - 返回各模块可搜索字段
+ */
+export const getSearchFields = () => {
+  return request({
+    url: '/api/common/search/fields',
+    method: 'get'
   });
 };
 
 export default {
   getPaginationData,
   updatePaginationSettings,
-  search
+  commonSearch,
+  getSearchFields
 }; 

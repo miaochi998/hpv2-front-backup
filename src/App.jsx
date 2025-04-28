@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { RouterProvider } from 'react-router-dom';
-import { ConfigProvider, Spin } from 'antd';
+import { ConfigProvider, Spin, App as AntdApp } from 'antd';
 import zhCN from 'antd/lib/locale/zh_CN';
 import { useDispatch, useSelector } from 'react-redux';
 import { getUserInfoAsync, clearAuth } from './store/slices/authSlice';
@@ -66,7 +66,9 @@ const App = () => {
         },
       }}
     >
-      <RouterProvider router={router} />
+      <AntdApp>
+        <RouterProvider router={router} />
+      </AntdApp>
     </ConfigProvider>
   );
 };

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Form, Input, Button, message, Card, Typography, Spin, Checkbox, Alert } from 'antd';
+import { Form, Input, Button, Card, Typography, Spin, Checkbox, Alert, App } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
@@ -70,6 +70,9 @@ const apiClient = axios.create({
 });
 
 const Login = () => {
+  // 获取App上下文
+  const { message } = App.useApp();
+  
   // 状态定义
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
@@ -174,11 +177,44 @@ const Login = () => {
       }
     } catch (error) {
       console.error('登录请求失败:', error);
+      // 详细记录错误响应
+      console.log('错误响应详情:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        message: error.response?.data?.message,
+        errorCode: error.response?.data?.code,
+        fullResponse: error.response?.data
+      });
       
-      const errorMsg = error.response?.data?.message || 
-                       '登录失败，请检查用户名和密码';
+      // 获取后端返回的错误信息
+      let errorMsg = '用户名或密码错误'; // 默认错误信息
       
-      setErrorMessage(`登录失败: ${errorMsg}`);
+      // 针对不同状态码处理不同的错误消息
+      if (error.response) {
+        console.log('原始错误消息:', error.response.data?.message);
+        console.log('完整错误响应:', error.response.data);
+        
+        // 直接检查错误消息中是否包含"停用"
+        if (error.response.data?.message && 
+            (error.response.data.message.includes('停用') || 
+             error.response.data.message.includes('禁用'))) {
+          errorMsg = '用户已停用';
+          console.log('根据错误消息内容判断为: 用户已停用');
+        }
+        // 针对状态码403 - 用户已停用
+        else if (error.response.status === 403) {
+          errorMsg = '用户已停用';
+          console.log('收到403错误，设置错误信息为: 用户已停用');
+        } 
+        // 针对其他错误状态码
+        else {
+          console.log(`收到${error.response.status}错误，设置默认错误信息: 用户名或密码错误`);
+        }
+      } else {
+        console.log('没有响应状态码，使用默认错误信息: 用户名或密码错误');
+      }
+      
+      setErrorMessage(errorMsg);
       message.error(errorMsg);
     } finally {
       setLoading(false);

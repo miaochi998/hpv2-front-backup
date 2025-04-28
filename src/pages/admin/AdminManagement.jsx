@@ -1,32 +1,32 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Table, Button, Space, Input, Select, Modal, 
-  Form, Row, Col, Checkbox, message, Card, Tag, Divider, Switch, App
+  Form, Row, Col, Checkbox, message, Card, Switch, Tag, App
 } from 'antd';
 import { 
   PlusOutlined, SearchOutlined, EditOutlined, 
   DeleteOutlined, ReloadOutlined, ExclamationCircleOutlined, KeyOutlined
 } from '@ant-design/icons';
 import {
-  getRegularUsers,
-  createRegularUser,
-  updateRegularUser,
-  updateRegularUserPassword,
-  updateRegularUserStatus,
-  deleteRegularUser,
-  batchResetRegularUserPassword
-} from '@/api/regularUser';
+  getAdminUsers,
+  createAdminUser,
+  updateAdminUser,
+  updateAdminUserPassword,
+  updateAdminUserStatus,
+  deleteAdminUser,
+  batchResetAdminPassword
+} from '@/api/admin';
 import request from '@/utils/request';
 
 const { Option } = Select;
 
-const UserManagement = () => {
+const AdminManagement = () => {
   // 使用App组件的message和modal方法
   const { message: messageApi, modal } = App.useApp();
   
   // 状态变量
   const [loading, setLoading] = useState(false);
-  const [users, setUsers] = useState([]);
+  const [admins, setAdmins] = useState([]);
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 10,
@@ -37,26 +37,40 @@ const UserManagement = () => {
   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
   const [isAddModalVisible, setIsAddModalVisible] = useState(false);
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
-  const [currentUser, setCurrentUser] = useState(null);
+  const [currentAdmin, setCurrentAdmin] = useState(null);
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
   const [addForm] = Form.useForm();
   const [editForm] = Form.useForm();
+  const [currentUserInfo, setCurrentUserInfo] = useState(null);
 
-  // 获取用户列表数据
-  const fetchUsers = async (page = pagination.current, pageSize = pagination.pageSize) => {
+  // 获取当前登录用户信息
+  useEffect(() => {
+    const userInfoStr = localStorage.getItem('userInfo');
+    if (userInfoStr) {
+      try {
+        const userInfo = JSON.parse(userInfoStr);
+        setCurrentUserInfo(userInfo);
+      } catch (e) {
+        console.error('解析用户信息失败', e);
+      }
+    }
+  }, []);
+
+  // 获取管理员列表数据
+  const fetchAdmins = async (page = pagination.current, pageSize = pagination.pageSize) => {
     setLoading(true);
     try {
       // 创建查询参数对象
       const params = {
         page,
         pageSize,
-        is_admin: false // 固定查询普通用户
+        is_admin: true // 固定查询管理员用户
       };
       
       // 添加状态筛选参数 - 确保大写
       if (statusFilter) {
         params.status = statusFilter.toUpperCase(); // 确保使用大写
-        console.log('[fetchUsers] 使用状态筛选:', params.status);
+        console.log('[fetchAdmins] 使用状态筛选:', params.status);
       }
       
       // 如果有搜索关键词，添加到查询参数
@@ -75,31 +89,31 @@ const UserManagement = () => {
       console.log('最终请求参数:', params);
       
       // 调用API
-      const response = await getRegularUsers(params);
+      const response = await getAdminUsers(params);
       console.log('后端响应:', response);
       
       // 处理返回数据
       if (response && response.data) {
-        // 提取用户列表
-        let userList = [];
+        // 提取管理员列表
+        let adminList = [];
         
         // 兼容处理不同的返回数据格式
         if (Array.isArray(response.data.list)) {
-          userList = response.data.list;
+          adminList = response.data.list;
         } else if (Array.isArray(response.data.users)) {
-          userList = response.data.users;
+          adminList = response.data.users;
         } else if (Array.isArray(response.data)) {
-          userList = response.data;
+          adminList = response.data;
         }
         
         // 调试：打印状态分布
-        const statusCounts = userList.reduce((acc, user) => {
-          acc[user.status] = (acc[user.status] || 0) + 1;
+        const statusCounts = adminList.reduce((acc, admin) => {
+          acc[admin.status] = (acc[admin.status] || 0) + 1;
           return acc;
         }, {});
-        console.log('用户状态分布:', statusCounts);
+        console.log('管理员状态分布:', statusCounts);
         
-        setUsers(userList);
+        setAdmins(adminList);
         
         // 设置分页信息
         let total = 0;
@@ -108,7 +122,7 @@ const UserManagement = () => {
         } else if (response.data.pagination && response.data.pagination.total !== undefined) {
           total = response.data.pagination.total;
         } else {
-          total = userList.length;
+          total = adminList.length;
         }
         
         setPagination({
@@ -118,12 +132,12 @@ const UserManagement = () => {
           total
         });
       } else {
-        setUsers([]);
+        setAdmins([]);
       }
     } catch (error) {
-      console.error('获取用户列表失败:', error);
-      messageApi.error('获取用户列表失败，请重试');
-      setUsers([]);
+      console.error('获取管理员列表失败:', error);
+      messageApi.error('获取管理员列表失败，请重试');
+      setAdmins([]);
     } finally {
       setLoading(false);
     }
@@ -131,20 +145,20 @@ const UserManagement = () => {
 
   // 组件挂载时获取数据
   useEffect(() => {
-    fetchUsers(1, pagination.pageSize);
+    fetchAdmins(1, pagination.pageSize);
   }, []);
 
   // 搜索条件变化时重新加载数据
   useEffect(() => {
-    fetchUsers(1, pagination.pageSize);
+    fetchAdmins(1, pagination.pageSize);
   }, [search, statusFilter]);
 
   // 表格分页、排序、筛选变化时触发
   const handleTableChange = (newPagination) => {
-    fetchUsers(newPagination.current, newPagination.pageSize);
+    fetchAdmins(newPagination.current, newPagination.pageSize);
   };
 
-  // 打开添加用户弹窗
+  // 打开添加管理员弹窗
   const showAddModal = () => {
     addForm.resetFields();
     // 设置默认密码
@@ -155,8 +169,8 @@ const UserManagement = () => {
     setIsAddModalVisible(true);
   };
 
-  // 提交添加用户表单
-  const handleAddUser = async (values) => {
+  // 提交添加管理员表单
+  const handleAddAdmin = async (values) => {
     if (values.password !== values.confirm_password) {
       messageApi.error('两次输入密码不一致');
       return;
@@ -168,26 +182,23 @@ const UserManagement = () => {
         password: values.password
       };
 
-      const response = await createRegularUser(userData);
-
-      if (response && response.data && response.data.id) {
-        messageApi.success('添加用户成功');
-        setIsAddModalVisible(false);
-        addForm.resetFields();
-        fetchUsers();
-      }
+      await createAdminUser(userData);
+      messageApi.success('添加管理员成功');
+      setIsAddModalVisible(false);
+      addForm.resetFields();
+      fetchAdmins();
     } catch (error) {
-      console.error('添加用户失败:', error);
-      messageApi.error('添加用户失败，请重试');
+      console.error('添加管理员失败:', error);
+      messageApi.error('添加管理员失败，请重试');
     }
   };
 
-  // 打开编辑用户弹窗
-  const showEditModal = (user) => {
-    setCurrentUser(user);
+  // 打开编辑管理员弹窗
+  const showEditModal = (admin) => {
+    setCurrentAdmin(admin);
     
     editForm.setFieldsValue({
-      username: user.username,
+      username: admin.username,
       password: '123456',
       confirm_password: '123456'
     });
@@ -195,63 +206,63 @@ const UserManagement = () => {
     setIsEditModalVisible(true);
   };
 
-  // 提交编辑用户表单
-  const handleEditUser = async (values) => {
-    if (!currentUser) return;
+  // 提交编辑管理员表单
+  const handleEditAdmin = async (values) => {
+    if (!currentAdmin) return;
 
     try {
       // 不再更新用户名，仅更新密码
       if (values.password && values.password.trim() !== '') {
-        await updateRegularUserPassword(currentUser.id, values.password);
-        messageApi.success('成功更新用户密码');
+        await updateAdminUserPassword(currentAdmin.id, values.password);
+        messageApi.success('成功更新管理员密码');
       } else {
-        messageApi.success('用户信息未变更');
+        messageApi.success('管理员信息未变更');
       }
 
       setIsEditModalVisible(false);
-      fetchUsers();
+      fetchAdmins();
     } catch (error) {
-      console.error('编辑用户失败:', error);
-      messageApi.error('编辑用户失败，请重试');
+      console.error('编辑管理员失败:', error);
+      messageApi.error('编辑管理员失败，请重试');
     }
   };
 
-  // 删除用户确认
-  const showDeleteConfirm = (user) => {
+  // 删除管理员确认
+  const showDeleteConfirm = (admin) => {
     modal.confirm({
-      title: '确定删除该用户吗？',
+      title: '确定删除该管理员吗？',
       icon: <ExclamationCircleOutlined />,
-      content: '删除后，该用户将无法登录系统，已关联的数据将保留。',
+      content: '删除后，该管理员将无法登录系统，已关联的数据将保留。',
       okText: '删除',
       okType: 'danger',
       cancelText: '取消',
       onOk: async () => {
         try {
-          await deleteRegularUser(user.id);
-          messageApi.success('删除用户成功');
-          fetchUsers(pagination.current, pagination.pageSize);
+          await deleteAdminUser(admin.id);
+          messageApi.success('删除管理员成功');
+          fetchAdmins(pagination.current, pagination.pageSize);
         } catch (error) {
-          console.error('删除用户失败:', error);
-          messageApi.error('删除用户失败，请重试');
+          console.error('删除管理员失败:', error);
+          messageApi.error('删除管理员失败，请重试');
         }
       }
     });
   };
 
-  // 更改用户状态
-  const handleStatusChange = async (user, checked) => {
+  // 更改管理员状态
+  const handleStatusChange = async (admin, checked) => {
     try {
       const newStatus = checked ? 'ACTIVE' : 'INACTIVE';
-      await updateRegularUserStatus(user.id, newStatus);
-      messageApi.success(`用户已${checked ? '启用' : '禁用'}`);
-      fetchUsers(pagination.current, pagination.pageSize);
+      await updateAdminUserStatus(admin.id, newStatus);
+      messageApi.success(`管理员已${checked ? '启用' : '禁用'}`);
+      fetchAdmins(pagination.current, pagination.pageSize);
     } catch (error) {
-      console.error('更新用户状态失败:', error);
-      messageApi.error('更新用户状态失败，请重试');
+      console.error('更新管理员状态失败:', error);
+      messageApi.error('更新管理员状态失败，请重试');
     }
   };
 
-  // 搜索用户功能
+  // 搜索管理员功能
   const handleSearch = (value) => {
     setSearch(value);
     setPagination({
@@ -264,7 +275,7 @@ const UserManagement = () => {
 
   // 状态筛选
   const handleStatusFilterChange = (value) => {
-    console.log("[UserManagement] 状态筛选值:", value);
+    console.log("[AdminManagement] 状态筛选值:", value);
     
     // 重要：根据数据库定义设置正确的状态值
     let newStatusFilter;
@@ -279,7 +290,7 @@ const UserManagement = () => {
       newStatusFilter = value.toUpperCase();
     }
     
-    console.log("[UserManagement] 设置状态筛选为:", newStatusFilter);
+    console.log("[AdminManagement] 设置状态筛选为:", newStatusFilter);
     
     // 更新状态值
     setStatusFilter(newStatusFilter);
@@ -295,7 +306,7 @@ const UserManagement = () => {
     
     // 通过useEffect触发重新加载
   };
-  
+
   // 切换下拉菜单状态
   const toggleStatusDropdown = () => {
     setStatusDropdownOpen(!statusDropdownOpen);
@@ -304,20 +315,20 @@ const UserManagement = () => {
   // 批量重置密码
   const batchResetPassword = () => {
     if (selectedRowKeys.length === 0) {
-      messageApi.warning('请先选择要重置密码的用户');
+      messageApi.warning('请先选择要重置密码的管理员');
       return;
     }
 
     modal.confirm({
       title: '批量重置密码',
       icon: <ExclamationCircleOutlined />,
-      content: `确定要将所选的 ${selectedRowKeys.length} 个用户的密码重置为 123456 吗？`,
+      content: `确定要将所选的 ${selectedRowKeys.length} 个管理员的密码重置为 123456 吗？`,
       okText: '确定重置',
       okType: 'danger',
       cancelText: '取消',
       onOk: async () => {
         try {
-          await batchResetRegularUserPassword(selectedRowKeys);
+          await batchResetAdminPassword(selectedRowKeys);
           messageApi.success('批量重置密码成功');
           setSelectedRowKeys([]);
         } catch (error) {
@@ -331,19 +342,21 @@ const UserManagement = () => {
   // 表格行选择配置
   const rowSelection = {
     selectedRowKeys,
-    onChange: (selectedRowKeys) => {
-      setSelectedRowKeys(selectedRowKeys);
-    }
+    onChange: (newSelectedRowKeys) => {
+      setSelectedRowKeys(newSelectedRowKeys);
+    },
+    getCheckboxProps: (record) => ({
+      disabled: isCurrentUser(record.id) // 当前登录用户不能被选中
+    })
+  };
+
+  // 判断是否是当前登录的用户（不能删除或禁用自己）
+  const isCurrentUser = (adminId) => {
+    return currentUserInfo && adminId === currentUserInfo.id;
   };
 
   // 表格列配置
   const columns = [
-    {
-      title: 'ID',
-      dataIndex: 'id',
-      key: 'id',
-      width: 80
-    },
     {
       title: '用户名',
       dataIndex: 'username',
@@ -416,6 +429,7 @@ const UserManagement = () => {
           onChange={(checked) => handleStatusChange(record, checked)}
           checkedChildren="启用" 
           unCheckedChildren="禁用"
+          disabled={isCurrentUser(record.id)} // 禁止切换当前登录用户状态
         />
       )
     },
@@ -438,6 +452,7 @@ const UserManagement = () => {
             size="small" 
             danger 
             onClick={() => showDeleteConfirm(record)}
+            disabled={isCurrentUser(record.id)} // 禁止删除当前登录用户
           >
             删除
           </Button>
@@ -447,8 +462,8 @@ const UserManagement = () => {
   ];
 
   return (
-    <div className="user-management-container">
-      <Card title="用户管理" bordered={false}>
+    <div className="admin-management-container">
+      <Card title="管理员用户管理" bordered={false}>
         {/* 搜索和过滤区 */}
         <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between' }}>
           <Space>
@@ -459,7 +474,7 @@ const UserManagement = () => {
               style={{ width: 250 }}
               prefix={<SearchOutlined />}
               allowClear
-              onPressEnter={() => fetchUsers(1, pagination.pageSize)}
+              onPressEnter={() => fetchAdmins(1, pagination.pageSize)}
             />
             <div style={{ position: 'relative', display: 'inline-block', marginRight: '8px' }}>
               <Button
@@ -503,7 +518,7 @@ const UserManagement = () => {
             </div>
             <Button
               icon={<ReloadOutlined />}
-              onClick={() => fetchUsers(1, pagination.pageSize)}
+              onClick={() => fetchAdmins(1, pagination.pageSize)}
             >
               刷新
             </Button>
@@ -523,15 +538,15 @@ const UserManagement = () => {
               icon={<PlusOutlined />}
               onClick={showAddModal}
             >
-              添加用户
+              添加管理员
             </Button>
           </Space>
         </div>
 
-        {/* 用户表格 */}
+        {/* 管理员表格 */}
         <Table
           columns={columns}
-          dataSource={users}
+          dataSource={admins}
           rowKey="id"
           rowSelection={rowSelection}
           pagination={{
@@ -545,9 +560,9 @@ const UserManagement = () => {
           scroll={{ x: 1200 }}
         />
 
-        {/* 添加用户弹窗 */}
+        {/* 添加管理员弹窗 */}
         <Modal
-          title="添加用户"
+          title="添加管理员"
           open={isAddModalVisible}
           onCancel={() => setIsAddModalVisible(false)}
           footer={null}
@@ -557,7 +572,7 @@ const UserManagement = () => {
           <Form
             form={addForm}
             layout="vertical"
-            onFinish={handleAddUser}
+            onFinish={handleAddAdmin}
           >
             <Form.Item
               name="username"
@@ -608,9 +623,9 @@ const UserManagement = () => {
           </Form>
         </Modal>
 
-        {/* 编辑用户弹窗 */}
+        {/* 编辑管理员弹窗 */}
         <Modal
-          title="编辑用户"
+          title="编辑管理员"
           open={isEditModalVisible}
           onCancel={() => setIsEditModalVisible(false)}
           footer={null}
@@ -620,7 +635,7 @@ const UserManagement = () => {
           <Form
             form={editForm}
             layout="vertical"
-            onFinish={handleEditUser}
+            onFinish={handleEditAdmin}
           >
             <Form.Item
               name="username"
@@ -673,4 +688,4 @@ const UserManagement = () => {
   );
 };
 
-export default UserManagement; 
+export default AdminManagement; 
