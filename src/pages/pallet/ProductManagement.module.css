@@ -107,4 +107,66 @@
   margin: 0 8px;
 }
 
-/* 表格样式通过动态注入的方式添加，避免全局污染 */ 
+/* 表格样式通过动态注入的方式添加，避免全局污染 */
+
+/* 产品图片样式 */
+.productImage {
+  position: relative;
+  width: 50px;
+  height: 50px;
+  margin: 0 auto;
+  border-radius: 4px;
+  overflow: hidden;
+  transition: all 0.3s;
+}
+
+.productImage img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s;
+}
+
+.productImage:hover img {
+  transform: scale(1.05);
+}
+
+.productImage::after {
+  content: '点击查看';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
+  font-size: 12px;
+  text-align: center;
+  padding: 2px 0;
+  transform: translateY(100%);
+  transition: transform 0.3s;
+}
+
+.productImage:hover::after {
+  transform: translateY(0);
+}
+
+/* 图片预览模态框样式 */
+:global(.product-image-preview-modal) {
+  z-index: 1001;
+}
+
+:global(.product-image-preview-modal .ant-modal-body) {
+  padding: 0;
+  background: #f0f0f0;
+}
+
+:global(.product-image-preview-modal .ant-modal-close) {
+  color: rgba(0, 0, 0, 0.65);
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 50%;
+}
+
+:global(.product-image-preview-modal .ant-modal-close:hover) {
+  color: #1890ff;
+  background: white;
+} 

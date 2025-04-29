@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Button, Input, Select, Typography, message, App } from 'antd';
+import { Button, Input, Select, Typography, message, App, Modal, Spin } from 'antd';
 import { PlusOutlined, ShareAltOutlined, DownloadOutlined, EyeOutlined, DeleteOutlined, EditOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons';
 import { useSelector } from 'react-redux';
 import request from '@/utils/request';
 import DataTable from '@/components/common/DataTable';
 import styles from './ProductManagement.module.css';
 import { commonSearch } from '@/api/common';
+import { getImageUrl } from '@/config/urls';
 
 const { Title } = Typography;
 const { Option } = Select;
@@ -34,6 +35,10 @@ const ProductManagement = () => {
     sort_field: 'updated_at',
     sort_order: 'desc'
   });
+  const [previewVisible, setPreviewVisible] = useState(false);
+  const [previewImage, setPreviewImage] = useState('');
+  const [previewTitle, setPreviewTitle] = useState('');
+  const [previewLoading, setPreviewLoading] = useState(false);
   
   // 根据用户角色确定固定的所有者类型 - 管理员查看公司总货盘，普通用户查看个人货盘
   const ownerType = isAdmin ? 'COMPANY' : 'SELLER';
@@ -41,7 +46,34 @@ const ProductManagement = () => {
   // 使用useMemo缓存表格列定义，避免每次渲染都重新创建
   const columns = useMemo(() => [
     { title: <div className={styles.center}>序号</div>, dataIndex: 'index', key: 'index', align: 'center' },
-    { title: <div className={styles.center}>图片</div>, dataIndex: 'image', key: 'image', align: 'center', render: () => <div className={styles.imgPlaceholder}></div> },
+    { 
+      title: <div className={styles.center}>图片</div>, 
+      dataIndex: 'image', 
+      key: 'image', 
+      align: 'center', 
+      render: (_, record) => {
+        // 查找该产品的图片附件(类型为IMAGE)
+        const imageAttachment = record.attachments?.find(
+          attachment => attachment.file_type === 'IMAGE'
+        );
+        
+        if (imageAttachment && imageAttachment.file_path) {
+          // 使用getImageUrl函数获取完整的图片URL
+          const imageUrl = getImageUrl(imageAttachment.file_path);
+          return (
+            <div className={styles.productImage} onClick={() => handlePreviewImage(imageUrl, record.name)}>
+              <img 
+                src={imageUrl} 
+                alt={record.name || '产品图片'} 
+              />
+            </div>
+          );
+        }
+        
+        // 没有图片时显示占位符
+        return <div className={styles.imgPlaceholder}></div>;
+      }
+    },
     { title: <div className={styles.center}>名称</div>, dataIndex: 'name', key: 'name', align: 'center' },
     { 
       title: <div className={styles.center}>品牌</div>, 
@@ -239,6 +271,7 @@ const ProductManagement = () => {
           sort_field: searchParams.sort_field,
           sort_order: searchParams.sort_order,
           with_price_tiers: true,  // 添加参数，请求包含价格档位数据
+          with_attachments: true,  // 添加参数，请求包含附件数据
           owner_type: ownerType     // 添加所有者类型参数
         };
         
@@ -305,6 +338,7 @@ const ProductManagement = () => {
           sort_order: searchParams.sort_order,
           with_brand: true,  // 添加请求品牌信息的参数
           with_price_tiers: true,  // 添加参数，请求包含价格档位数据
+          with_attachments: true,  // 添加参数，请求包含附件数据
           owner_type: ownerType  // 添加固定的所有者类型参数
         };
         
@@ -379,17 +413,21 @@ const ProductManagement = () => {
     }
   }, [pagination.current, pagination.pageSize, searchParams.sort_field, searchParams.sort_order, searchParams.keyword, ownerType]);
 
-  // 处理产品数据，为每个产品加载价格档位
+  // 处理产品数据，为每个产品加载价格档位和附件
   const processProductData = async (products) => {
     if (!products || products.length === 0) return [];
     
-    // 对于没有价格档位的产品，尝试获取价格档位
-    const productsWithoutTiers = products.filter(product => 
-      !product.price_tiers || !Array.isArray(product.price_tiers) || product.price_tiers.length === 0
+    console.log('处理产品数据，检查附件和价格档位:', products);
+    
+    // 对于没有价格档位或附件的产品，尝试获取这些数据
+    const productsNeedingDetails = products.filter(product => 
+      (!product.price_tiers || !Array.isArray(product.price_tiers) || product.price_tiers.length === 0) ||
+      (!product.attachments || !Array.isArray(product.attachments) || product.attachments.length === 0)
     );
     
-    // 如果所有产品都已有价格档位数据，直接返回
-    if (productsWithoutTiers.length === 0) {
+    // 如果所有产品都已有完整数据，直接返回
+    if (productsNeedingDetails.length === 0) {
+      console.log('所有产品已有完整数据，无需获取详情');
       return products;
     }
     
@@ -398,33 +436,36 @@ const ProductManagement = () => {
     products.forEach(product => {
       productMap[product.id] = { ...product };
       
-      // 为所有产品初始化空的价格档位数组，避免未定义
+      // 为所有产品初始化空的价格档位数组和附件数组，避免未定义
       if (!productMap[product.id].price_tiers || !Array.isArray(productMap[product.id].price_tiers)) {
         productMap[product.id].price_tiers = [];
       }
+      
+      if (!productMap[product.id].attachments || !Array.isArray(productMap[product.id].attachments)) {
+        productMap[product.id].attachments = [];
+      }
     });
     
-    // 批量获取价格档位数据
+    // 批量获取产品详情数据
     try {
-      // 由于权限原因，我们不需要获取所有产品的详情，尤其是pagination接口已返回的产品
-      // 对于分页接口，如果已经返回了价格档位数据，则无需再次请求
-      const productIds = productsWithoutTiers
-        .filter(p => !p.price_tiers || p.price_tiers.length === 0)
-        .map(p => p.id);
+      // 由于权限原因，我们不需要获取所有产品的详情，只获取需要详情的产品
+      const productIds = productsNeedingDetails.map(p => p.id);
       
       if (productIds.length === 0) {
         return Object.values(productMap);
       }
       
-      // 构建批量查询参数 - 使用产品详情API获取价格档位
+      console.log('需要获取详情的产品ID:', productIds);
+      
+      // 构建批量查询参数 - 使用产品详情API获取价格档位和附件
       const queryPromises = productIds.map(productId => 
         request({
-          url: `/api/pallet/products/${productId}`,  // 修正API路径，使用产品详情接口
+          url: `/api/pallet/products/${productId}`,  // 使用产品详情接口
           method: 'GET'
         }).catch(err => {
           // 对于403错误（权限不足），不显示错误消息，只在控制台记录
           if (err.response && err.response.status === 403) {
-            console.log(`产品 ${productId} 无访问权限，跳过获取价格档位`);
+            console.log(`产品 ${productId} 无访问权限，跳过获取详情`);
           } else {
             console.error(`获取产品 ${productId} 详情失败:`, err);
           }
@@ -441,17 +482,19 @@ const ProductManagement = () => {
         if (response && response.code === 200 && response.data) {
           const productData = response.data;
           
-          // 从产品详情中获取价格档位
+          // 从产品详情中获取价格档位和附件信息
           const priceTiers = productData.price_tiers || [];
+          const attachments = productData.attachments || [];
+          
+          console.log(`产品 ${productId} 详情获取成功:`, 
+            `价格档位: ${priceTiers.length}, 附件: ${attachments.length}`);
           
           if (productMap[productId]) {
-            // 更新价格档位和其他可能缺失的信息
+            // 更新价格档位
             productMap[productId].price_tiers = priceTiers;
             
-            // 如果产品详情中有附件信息，也一并更新
-            if (productData.attachments) {
-              productMap[productId].attachments = productData.attachments;
-            }
+            // 更新附件信息
+            productMap[productId].attachments = attachments;
           }
         }
       });
@@ -599,6 +642,34 @@ const ProductManagement = () => {
     message.info('分享货盘功能待实现');
   }, []);
 
+  // 处理图片预览
+  const handlePreviewImage = useCallback((imageUrl, title) => {
+    if (!imageUrl) return;
+    
+    // 设置加载状态
+    setPreviewLoading(true);
+    
+    // 预加载图片
+    const img = new Image();
+    img.src = imageUrl;
+    img.onload = () => {
+      setPreviewLoading(false);
+    };
+    img.onerror = () => {
+      setPreviewLoading(false);
+      message.error('图片加载失败');
+    };
+    
+    setPreviewImage(imageUrl);
+    setPreviewTitle(title || '产品图片');
+    setPreviewVisible(true);
+  }, [message]);
+  
+  // 关闭图片预览
+  const handlePreviewCancel = useCallback(() => {
+    setPreviewVisible(false);
+  }, []);
+
   // 如果未认证，返回null（让路由系统处理重定向）
   if (!isAuthenticated) {
     return null;
@@ -685,6 +756,47 @@ const ProductManagement = () => {
           scroll: { x: 'max-content' }
         }}
       />
+      
+      {/* 图片预览模态框 */}
+      <Modal
+        title={previewTitle}
+        footer={null}
+        open={previewVisible}
+        onCancel={handlePreviewCancel}
+        centered
+        width="auto"
+        styles={{
+          body: { padding: 0 }
+        }}
+        style={{ maxWidth: '90vw' }}
+        wrapClassName="product-image-preview-modal"
+      >
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center',
+          minHeight: '200px',
+          minWidth: '300px',
+          maxHeight: '80vh',
+          overflow: 'auto'
+        }}>
+          {previewLoading ? (
+            <div style={{ textAlign: 'center', padding: '40px' }}>
+              <Spin size="large" tip="图片加载中..." />
+            </div>
+          ) : (
+            <img 
+              alt={previewTitle} 
+              style={{ 
+                maxWidth: '100%', 
+                maxHeight: '80vh', 
+                objectFit: 'contain' 
+              }} 
+              src={previewImage} 
+            />
+          )}
+        </div>
+      </Modal>
     </div>
   );
 };
