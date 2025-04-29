@@ -16,16 +16,18 @@ const DebugLogin = lazy(() => import('@/pages/login/DebugLogin'));
 const MainLayout = lazy(() => import('@/components/layout/MainLayout'));
 const Dashboard = lazy(() => import('@/pages/dashboard/Dashboard'));
 const Unauthorized = lazy(() => import('@/pages/Unauthorized'));
+const ProductManagement = lazy(() => import('@/pages/pallet/ProductManagement'));
+const RecycleBin = lazy(() => import('@/pages/pallet/RecycleBin'));
 
 // 管理员页面
 const BrandManagement = lazy(() => import('@/pages/admin/BrandManagement'));
 const UserManagement = lazy(() => import('@/pages/admin/UserManagement'));
 const AdminManagement = lazy(() => import('@/pages/admin/AdminManagement'));
-const ProductManagement = lazy(() => import('@/pages/admin/ProductManagement'));
+const ViewSalesPallets = lazy(() => import('@/pages/admin/ViewSalesPallets'));
 
 // 销售员页面
-const SellerProducts = lazy(() => import('@/pages/seller/PalletManagement'));
 const ProfileManagement = lazy(() => import('@/pages/ProfileManagement'));
+const ViewCompanyPallets = lazy(() => import('@/pages/seller/ViewCompanyPallets'));
 
 // 创建路由
 const router = createBrowserRouter([
@@ -64,6 +66,20 @@ const router = createBrowserRouter([
           requiredRoles={[]} // 空数组表示所有角色都可访问
         />
       },
+      {
+        path: 'products',
+        element: <PrivateRoute 
+          element={lazyLoad(ProductManagement)}
+          requiredRoles={[]} // 空数组表示所有角色都可访问
+        />
+      },
+      {
+        path: 'recyclebin',
+        element: <PrivateRoute 
+          element={lazyLoad(RecycleBin)}
+          requiredRoles={[]} // 空数组表示所有角色都可访问
+        />
+      },
       // 管理员路由
       {
         path: 'admin',
@@ -90,9 +106,9 @@ const router = createBrowserRouter([
             />
           },
           { 
-            path: 'products', 
+            path: 'sales-pallets', 
             element: <PrivateRoute 
-              element={lazyLoad(ProductManagement)} 
+              element={lazyLoad(ViewSalesPallets)} 
               requiredRoles={['admin']} 
             />
           },
@@ -103,17 +119,10 @@ const router = createBrowserRouter([
         path: 'seller',
         children: [
           { 
-            path: 'products', 
+            path: 'company-pallets', 
             element: <PrivateRoute 
-              element={lazyLoad(SellerProducts)} 
+              element={lazyLoad(ViewCompanyPallets)} 
               requiredRoles={['seller']} 
-            />
-          },
-          { 
-            path: 'profile', 
-            element: <PrivateRoute 
-              element={lazyLoad(ProfileManagement)} 
-              requiredRoles={['admin', 'seller']} 
             />
           },
         ],

@@ -89,7 +89,7 @@ const Sidebar = () => {
     // 管理员菜单
     const adminMenuItems = isAdmin ? [
       {
-        key: '/protected/admin/products',
+        key: '/protected/products',
         icon: <AppstoreOutlined />,
         label: '总货盘管理'
       },
@@ -118,7 +118,7 @@ const Sidebar = () => {
     // 销售员菜单
     const sellerMenuItems = !isAdmin ? [
       {
-        key: '/protected/seller/products',
+        key: '/protected/products',
         icon: <AppstoreOutlined />,
         label: '货盘管理'
       },

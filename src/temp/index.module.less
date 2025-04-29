@@ -1,0 +1,221 @@
+.container {
+  padding: 24px;
+  background: #fff;
+  border-radius: 8px;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.toolbarRight {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+}
+
+.shareBtn {
+  background: #52c41a !important;
+  color: #fff !important;
+  border: none !important;
+}
+
+.table {
+  margin-bottom: 16px;
+}
+
+.center {
+  text-align: center;
+}
+
+.paginationWrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 16px;
+}
+
+.totalText {
+  color: #888;
+  font-size: 14px;
+}
+
+.imgPlaceholder {
+  width: 48px;
+  height: 48px;
+  background: #f0f0f0;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+/** 去除表头和单元格内边距，使内容占满全部空间 **/
+.ant-table-cell {
+  padding: 0 !important;
+}
+
+/* 确保表头和单元格都没有内边距 */
+:global(.ant-table-thead > tr > th),
+:global(.ant-table-tbody > tr > td) {
+  padding: 0 !important;
+}
+
+/**** 档位价格表头样式 ****/
+.priceTiersHeader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  margin-top: 0;
+  border-bottom: none;
+  border-top: none;
+}
+
+/* 档位价格文字所在容器 */
+._center_o4m4y_24 > div:first-child {
+  border-bottom: 1px solid #e8e8e8;
+  font-weight: bold;
+  padding: 8px 0;
+  margin: 0;
+}
+
+/* 确保档位价格文字所在容器有下边框 */
+:global(.ant-table-thead > tr > th) > div > div:first-child {
+  border-bottom: 1px solid #e8e8e8 !important;
+}
+
+.tierQtyHeader {
+  width: 50%;
+  text-align: center;
+  color: #333;
+  border-right: 1px solid #e8e8e8;
+  border-bottom: none;
+  border-top: none;
+  padding: 8px;
+  font-weight: bold;
+  background: none;
+  position: relative;
+}
+
+.tierPriceHeader {
+  width: 50%;
+  text-align: center;
+  color: #333;
+  border: none;
+  padding: 8px;
+  font-weight: bold;
+  background: none;
+  position: relative;
+}
+
+/**** 档位价格内容单元格样式 ****/
+.priceTiersCell {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  border: none;
+  padding: 0;
+}
+
+.priceTierRow {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  font-size: 14px;
+  min-width: 150px;
+  height: 32px;
+  box-sizing: border-box;
+  border-bottom: 1px solid #e8e8e8;
+  margin: 0;
+  padding: 0;
+}
+
+.priceTierRow:last-child {
+  border-bottom: none;
+}
+
+.tierQty {
+  width: 50%;
+  text-align: center;
+  color: #333;
+  border-right: 1px solid #e8e8e8;
+  border-bottom: none;
+  border-top: none;
+  padding: 8px;
+  background: none;
+  font-family: inherit;
+  position: relative;
+}
+
+.tierPrice {
+  width: 50%;
+  text-align: center;
+  color: #222;
+  font-weight: normal;
+  border: none;
+  padding: 8px;
+  background: none;
+  font-family: inherit;
+  position: relative;
+}
+
+/* 删除内容单元格数量与价格之间的竖线 */
+.tierQty::after {
+  display: none;
+}
+
+/* 删除内容单元格数量与价格之间的横线（非最后一行） */
+.priceTierRow:not(:last-child) .tierQty,
+.priceTierRow:not(:last-child) .tierPrice {
+  border-bottom: none;
+}
+
+/* 删除表头数量与价格之间的竖线 */
+.tierQtyHeader::after {
+  display: none;
+}
+
+/* 测试类名样式 */
+.test-header {
+  /* 删除红色背景 */
+}
+
+.test-cell {
+  /* 删除红色背景 */
+}
+
+.test-row {
+  /* 删除红色背景 */
+}
+
+.test-qty {
+  /* 删除红色背景 */
+}
+
+.test-price {
+  /* 删除红色背景 */
+}
+
+/* 表头淡蓝色背景 */
+:global(.ant-table-thead > tr > th) {
+  background-color: #e6f7ff !important;
+  border-color: #d9d9d9 !important;
+}
+
+/* 偶数行淡灰色背景 */
+:global(.ant-table-tbody > tr:nth-child(even)) {
+  background-color: #f9f9f9;
+}
+
+/* 鼠标悬停时的背景色 */
+:global(.ant-table-tbody > tr:hover > td) {
+  background-color: #f0f7ff !important;
+}
+
+/* 表格边框颜色 */
+:global(.ant-table-bordered .ant-table-cell) {
+  border-color: #e8e8e8 !important;
+} 

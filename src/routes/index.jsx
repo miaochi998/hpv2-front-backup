@@ -7,7 +7,7 @@ import Layout from '@/components/layout/Layout';
 import Dashboard from '@/pages/Dashboard';
 import UserManagement from '@/pages/admin/UserManagement';
 import AdminManagement from '@/pages/admin/AdminManagement';
-import ProductManagement from '@/pages/pallet/ProductManagement';
+import ProductManagement from '../pages/pallet/ProductManagement';
 import BrandManagement from '@/pages/pallet/BrandManagement';
 import CategoryManagement from '@/pages/pallet/CategoryManagement';
 import SalesPalletView from '@/pages/sales/SalesPalletView';
