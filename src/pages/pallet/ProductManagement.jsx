@@ -125,6 +125,9 @@ const ProductManagement = () => {
     { title: <div className={styles.center}>删除</div>, dataIndex: 'delete', key: 'delete', align: 'center', render: (_, record) => <Button type="link" danger icon={<DeleteOutlined />} onClick={() => handleDelete(record.id)} /> },
   ], [brands]);
 
+  // 引用保存组件样式重置id
+  const styleResetRef = useRef(null);
+
   // 初始化加载数据 - 确保先加载品牌再加载产品
   useEffect(() => {
     const initData = async () => {
@@ -141,6 +144,53 @@ const ProductManagement = () => {
     };
     
     initData();
+
+    // 为ProductManagement添加特定样式范围
+    const styleId = 'product-management-styles';
+    if (!document.getElementById(styleId)) {
+      const styleElement = document.createElement('style');
+      styleElement.id = styleId;
+      styleElement.innerHTML = `
+        /* 限制表格样式作用域，避免影响其他页面 */
+        .${styles.container} .ant-table-cell {
+          padding: 0 !important;
+        }
+        
+        .${styles.container} .ant-table-thead > tr > th,
+        .${styles.container} .ant-table-tbody > tr > td {
+          padding: 0 !important;
+        }
+        
+        .${styles.container} .ant-table-thead > tr > th {
+          background-color: #e6f7ff !important;
+          border-color: #d9d9d9 !important;
+        }
+        
+        .${styles.container} .ant-table-tbody > tr:nth-child(even) {
+          background-color: #f9f9f9;
+        }
+        
+        .${styles.container} .ant-table-tbody > tr:hover > td {
+          background-color: #f0f7ff !important;
+        }
+        
+        .${styles.container} .ant-table-bordered .ant-table-cell {
+          border-color: #e8e8e8 !important;
+        }
+      `;
+      document.head.appendChild(styleElement);
+      styleResetRef.current = styleId;
+    }
+
+    // 组件卸载时清理样式
+    return () => {
+      if (styleResetRef.current) {
+        const styleElement = document.getElementById(styleResetRef.current);
+        if (styleElement) {
+          document.head.removeChild(styleElement);
+        }
+      }
+    };
   }, []);
 
   // 获取品牌列表 - 仅用于显示，不再用于筛选
@@ -614,7 +664,7 @@ const ProductManagement = () => {
       
       {/* 使用通用DataTable组件 */}
       <DataTable
-        className={styles.table}
+        className={`${styles.table} ${styles.productTable}`}
         columns={columns}
         dataSource={products}
         rowKey="id"

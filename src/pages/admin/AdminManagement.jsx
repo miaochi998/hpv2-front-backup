@@ -17,6 +17,7 @@ import {
   batchResetAdminPassword
 } from '@/api/admin';
 import request from '@/utils/request';
+import styles from './AdminManagement.module.css';
 
 const { Option } = Select;
 
@@ -146,6 +147,34 @@ const AdminManagement = () => {
   // 组件挂载时获取数据
   useEffect(() => {
     fetchAdmins(1, pagination.pageSize);
+    
+    // 创建管理员管理页面特有样式
+    const styleId = 'admin-management-styles';
+    if (!document.getElementById(styleId)) {
+      const styleEl = document.createElement('style');
+      styleEl.id = styleId;
+      styleEl.innerHTML = `
+        /* 确保管理员管理页面表格样式正常 */
+        .ant-table-cell {
+          padding: 16px !important;
+        }
+        .ant-table-thead > tr > th {
+          background-color: #fafafa !important;
+        }
+        .ant-table-tbody > tr > td {
+          padding: 16px !important;
+        }
+      `;
+      document.head.appendChild(styleEl);
+    }
+    
+    // 组件卸载时清理样式
+    return () => {
+      const styleEl = document.getElementById(styleId);
+      if (styleEl) {
+        document.head.removeChild(styleEl);
+      }
+    };
   }, []);
 
   // 搜索条件变化时重新加载数据
@@ -462,10 +491,10 @@ const AdminManagement = () => {
   ];
 
   return (
-    <div className="admin-management-container">
+    <div className={styles.container}>
       <Card title="管理员用户管理" bordered={false}>
         {/* 搜索和过滤区 */}
-        <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between' }}>
+        <div className={styles.toolBar}>
           <Space>
             <Input
               placeholder="搜索用户名、姓名或手机号"
@@ -544,21 +573,23 @@ const AdminManagement = () => {
         </div>
 
         {/* 管理员表格 */}
-        <Table
-          columns={columns}
-          dataSource={admins}
-          rowKey="id"
-          rowSelection={rowSelection}
-          pagination={{
-            ...pagination,
-            showSizeChanger: true,
-            showQuickJumper: true,
-            showTotal: (total) => `共 ${total} 条记录`
-          }}
-          loading={loading}
-          onChange={handleTableChange}
-          scroll={{ x: 1200 }}
-        />
+        <div className={styles.tableContainer}>
+          <Table
+            columns={columns}
+            dataSource={admins}
+            rowKey="id"
+            rowSelection={rowSelection}
+            pagination={{
+              ...pagination,
+              showSizeChanger: true,
+              showQuickJumper: true,
+              showTotal: (total) => `共 ${total} 条记录`
+            }}
+            loading={loading}
+            onChange={handleTableChange}
+            scroll={{ x: 1200 }}
+          />
+        </div>
 
         {/* 添加管理员弹窗 */}
         <Modal

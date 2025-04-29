@@ -52,15 +52,15 @@
   margin: 0 auto;
 }
 
-/** 去除表头和单元格内边距，使内容占满全部空间 **/
-:global(.ant-table-cell) {
-  padding: 0 !important;
+/* 产品管理表格单元格样式，仅应用于当前组件 */
+.productTable .ant-table-cell {
+  padding: 0;
 }
 
-/* 确保表头和单元格都没有内边距 */
-:global(.ant-table-thead > tr > th),
-:global(.ant-table-tbody > tr > td) {
-  padding: 0 !important;
+/* 产品管理表格头部和单元格样式，仅应用于当前组件 */
+.productTable .ant-table-thead > tr > th,
+.productTable .ant-table-tbody > tr > td {
+  padding: 0;
 }
 
 /**** 档位价格表头样式 ****/
@@ -107,23 +107,4 @@
   margin: 0 8px;
 }
 
-/* 表头淡蓝色背景 */
-:global(.ant-table-thead > tr > th) {
-  background-color: #e6f7ff !important;
-  border-color: #d9d9d9 !important;
-}
-
-/* 偶数行淡灰色背景 */
-:global(.ant-table-tbody > tr:nth-child(even)) {
-  background-color: #f9f9f9;
-}
-
-/* 鼠标悬停时的背景色 */
-:global(.ant-table-tbody > tr:hover > td) {
-  background-color: #f0f7ff !important;
-}
-
-/* 表格边框颜色 */
-:global(.ant-table-bordered .ant-table-cell) {
-  border-color: #e8e8e8 !important;
-} 
+/* 表格样式通过动态注入的方式添加，避免全局污染 */ 
