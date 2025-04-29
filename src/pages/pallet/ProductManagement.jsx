@@ -32,6 +32,7 @@ const ProductManagement = () => {
   });
   const [searchParams, setSearchParams] = useState({
     keyword: '',
+    brand_id: null, // 添加品牌ID字段用于筛选
     sort_field: 'updated_at',
     sort_order: 'desc'
   });
@@ -42,6 +43,9 @@ const ProductManagement = () => {
   
   // 根据用户角色确定固定的所有者类型 - 管理员查看公司总货盘，普通用户查看个人货盘
   const ownerType = isAdmin ? 'COMPANY' : 'SELLER';
+
+  // 在组件顶部添加状态跟踪是否选择了品牌
+  const [selectedBrandName, setSelectedBrandName] = useState('全部品牌');
 
   // 使用useMemo缓存表格列定义，避免每次渲染都重新创建
   const columns = useMemo(() => [
@@ -255,7 +259,7 @@ const ProductManagement = () => {
   };
 
   // 合并的产品获取函数 - 用于分页和搜索两种场景
-  const fetchProducts = useCallback(async (page = pagination.current, pageSize = pagination.pageSize, keyword = searchParams.keyword) => {
+  const fetchProducts = useCallback(async (page = pagination.current, pageSize = pagination.pageSize, keyword = searchParams.keyword, brandId = searchParams.brand_id) => {
     setLoading(true);
     
     try {
@@ -275,12 +279,21 @@ const ProductManagement = () => {
           owner_type: ownerType     // 添加所有者类型参数
         };
         
+        // 修改添加brand_id参数的方式，确保只在有效时添加
+        if (brandId !== null && brandId !== undefined && !isNaN(brandId)) {
+          console.log('[fetchProducts] 添加品牌筛选ID (搜索模式):', brandId, '类型:', typeof brandId);
+          additionalParams.brand_id = brandId;
+        } else {
+          console.log('[fetchProducts] 不添加品牌筛选 (搜索模式), brandId:', brandId);
+        }
+        
         console.log('搜索参数:', {
           module: 'products',
           keyword,
           fields,
           exact,
           owner_type: ownerType,
+          brand_id: brandId,
           ...additionalParams
         });
         
@@ -339,8 +352,16 @@ const ProductManagement = () => {
           with_brand: true,  // 添加请求品牌信息的参数
           with_price_tiers: true,  // 添加参数，请求包含价格档位数据
           with_attachments: true,  // 添加参数，请求包含附件数据
-          owner_type: ownerType  // 添加固定的所有者类型参数
+          owner_type: ownerType     // 添加固定的所有者类型参数
         };
+        
+        // 修改添加brand_id参数的方式，确保只在有效时添加
+        if (brandId !== null && brandId !== undefined && !isNaN(brandId)) {
+          console.log('[fetchProducts] 添加品牌筛选ID (分页模式):', brandId, '类型:', typeof brandId);
+          params.brand_id = brandId;
+        } else {
+          console.log('[fetchProducts] 不添加品牌筛选 (分页模式), brandId:', brandId);
+        }
         
         console.log('分页查询参数:', params);
         
@@ -411,7 +432,7 @@ const ProductManagement = () => {
     } finally {
       setLoading(false);
     }
-  }, [pagination.current, pagination.pageSize, searchParams.sort_field, searchParams.sort_order, searchParams.keyword, ownerType]);
+  }, [pagination.current, pagination.pageSize, searchParams.sort_field, searchParams.sort_order, searchParams.keyword, searchParams.brand_id, ownerType]);
 
   // 处理产品数据，为每个产品加载价格档位和附件
   const processProductData = async (products) => {
@@ -536,9 +557,10 @@ const ProductManagement = () => {
     fetchProducts(
       newCurrentPage, 
       newPagination.pageSize, 
-      searchParams.keyword
+      searchParams.keyword,
+      searchParams.brand_id
     );
-  }, [fetchProducts, pagination, isSearching, searchParams.keyword]);
+  }, [fetchProducts, pagination, isSearching, searchParams.keyword, searchParams.brand_id]);
 
   // 处理搜索输入框值变化 - 用于实时搜索，使用useCallback优化
   const handleSearchInputChange = useCallback((e) => {
@@ -557,20 +579,47 @@ const ProductManagement = () => {
     
     // 如果输入为空，立即执行普通分页查询
     if (!value || value.trim() === '') {
-      fetchProducts(1, pagination.pageSize, '');
+      fetchProducts(1, pagination.pageSize, '', searchParams.brand_id);
     } else {
       // 否则添加300ms防抖后执行搜索
       searchTimerRef.current = setTimeout(() => {
-        fetchProducts(1, pagination.pageSize, value);
+        fetchProducts(1, pagination.pageSize, value, searchParams.brand_id);
       }, 300);
     }
-  }, [fetchProducts, pagination.pageSize]);
+  }, [fetchProducts, pagination.pageSize, searchParams.brand_id]);
 
-  // 处理品牌筛选变化 - 待实现，使用useCallback优化
-  const handleBrandChange = useCallback((value) => {
-    // 品牌筛选功能待实现
-    message.info('品牌筛选功能待实现');
-  }, []);
+  // 处理品牌筛选变化
+  const handleBrandChange = useCallback((event) => {
+    // 使用event.target.value获取选中值
+    const selectedValue = event.target.value;
+    
+    // 查找选中品牌名称
+    let brandName = '全部品牌';
+    let brandId = null;
+    
+    if (selectedValue !== 'all') {
+      // 转换为数字
+      brandId = parseInt(selectedValue, 10);
+      
+      // 查找对应的品牌名称
+      const brand = brands.find(b => b.id === brandId);
+      if (brand) {
+        brandName = brand.name;
+      }
+    }
+    
+    // 更新选中的品牌名称状态
+    setSelectedBrandName(brandName);
+    
+    // 更新搜索参数
+    setSearchParams(prev => ({
+      ...prev,
+      brand_id: brandId
+    }));
+    
+    // 获取筛选后的数据
+    fetchProducts(1, pagination.pageSize, searchParams.keyword, brandId);
+  }, [brands, fetchProducts, pagination.pageSize, searchParams.keyword]);
 
   // 强制刷新产品列表，使用useCallback优化
   const handleRefreshList = useCallback(() => {
@@ -579,6 +628,7 @@ const ProductManagement = () => {
     // 重置搜索参数为初始值
     setSearchParams({
       keyword: '',
+      brand_id: null, // 重置品牌ID
       sort_field: 'updated_at',
       sort_order: 'desc'
     });
@@ -597,7 +647,7 @@ const ProductManagement = () => {
     // 重新获取品牌列表和产品列表
     const refreshData = async () => {
       await fetchBrands();
-      await fetchProducts(1, 10, ''); // 使用固定的初始值10
+      await fetchProducts(1, 10, '', null); // 使用固定的初始值10
     };
     
     refreshData();
@@ -695,15 +745,33 @@ const ProductManagement = () => {
               prefix={<SearchOutlined style={{ color: '#999' }} />}
             />
             
-            {/* 品牌筛选下拉框 - 设置为待实现 */}
-            <Select
-              placeholder="选择品牌"
-              style={{ width: 200, marginRight: 8 }}
-              onChange={handleBrandChange}
-              disabled
-            >
-              <Option value="disabled" disabled>品牌筛选功能待实现</Option>
-            </Select>
+            {/* 品牌筛选下拉框 - 使用原生select元素 */}
+            <div style={{ display: 'inline-block', width: 200, marginRight: 8 }}>
+              <select 
+                style={{ 
+                  width: '100%', 
+                  height: '32px',
+                  padding: '4px 11px',
+                  borderRadius: '6px',
+                  border: '1px solid #d9d9d9',
+                  fontSize: '14px',
+                  boxSizing: 'border-box',
+                  outline: 'none',
+                  backgroundColor: '#fff',
+                  color: 'rgba(0, 0, 0, 0.85)',
+                  cursor: 'pointer'
+                }}
+                value={searchParams.brand_id === null ? 'all' : String(searchParams.brand_id)}
+                onChange={handleBrandChange}
+              >
+                <option value="all">全部品牌</option>
+                {brands.map(brand => (
+                  <option key={brand.id} value={String(brand.id)}>
+                    {brand.name}
+                  </option>
+                ))}
+              </select>
+            </div>
             
             <Button
               icon={<ReloadOutlined />}
