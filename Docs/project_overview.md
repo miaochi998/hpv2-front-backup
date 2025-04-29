@@ -42,6 +42,10 @@
 
 ## 快速启动指南
 
+
+cd /www/wwwroot && bash start-services.sh
+
+
 ### 前端开发
 ```bash
 # 进入前端项目目录
