@@ -150,7 +150,7 @@ const createProductFetcher = (setLoading, setIsSearching, setProducts, setPagina
 const ProductManagement = () => {
   const { user, isAuthenticated } = useSelector(state => state.auth);
   const isAdmin = user?.is_admin;
-  const { message } = App.useApp();
+  const { message, modal } = App.useApp();
   
   // 添加搜索防抖定时器的引用
   const searchTimerRef = useRef(null);
@@ -181,6 +181,8 @@ const ProductManagement = () => {
   const [isFormVisible, setIsFormVisible] = useState(false);
   const [currentProduct, setCurrentProduct] = useState(null);
   const [isEdit, setIsEdit] = useState(false);
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [currentDeleteId, setCurrentDeleteId] = useState(null);
   
   // 根据用户角色确定固定的所有者类型 - 管理员查看公司总货盘，普通用户查看个人货盘
   const ownerType = isAdmin ? 'COMPANY' : 'SELLER';
@@ -379,15 +381,70 @@ const ProductManagement = () => {
     setIsFormVisible(false);
   };
 
-  // 处理产品删除
-  const handleDelete = useCallback((id) => {
-    message.info(`删除产品功能待实现，产品ID: ${id}`);
-  }, []);
-
   // 处理产品移动到回收站
   const handleMoveToRecycleBin = useCallback((id) => {
     message.info(`放入回收站功能待实现，产品ID: ${id}`);
   }, []);
+
+  // 处理产品删除
+  const handleDelete = useCallback((id) => {
+    setCurrentDeleteId(id);
+    setDeleteModalVisible(true);
+  }, []);
+
+  // 处理永久删除确认
+  const handleConfirmPermanentDelete = useCallback(async () => {
+    if (!currentDeleteId) return;
+    
+    try {
+      setLoading(true);
+      
+      // 调用永久删除API
+      const response = await request({
+        url: `/api/pallet/products/${currentDeleteId}/permanent`,
+        method: 'DELETE'
+      });
+      
+      if (response && response.code === 200) {
+        message.success('产品已永久删除');
+        setDeleteModalVisible(false);
+        
+        // 刷新产品列表
+        if (fetchProductsRef.current) {
+          fetchProductsRef.current(
+            pagination.current, 
+            pagination.pageSize, 
+            searchParams.keyword, 
+            searchParams.brand_id,
+            searchParams.sort_field,
+            searchParams.sort_order
+          );
+        }
+      } else {
+        message.error(response?.message || '删除产品失败');
+      }
+    } catch (error) {
+      console.error('删除产品失败:', error);
+      message.error('删除产品失败: ' + (error.response?.data?.message || error.message || '未知错误'));
+    } finally {
+      setLoading(false);
+    }
+  }, [currentDeleteId, pagination, searchParams, message, setLoading]);
+
+  // 处理取消删除
+  const handleCancelDelete = useCallback(() => {
+    setDeleteModalVisible(false);
+    setCurrentDeleteId(null);
+  }, []);
+
+  // 处理放入回收站并关闭模态框
+  const handleMoveToRecycleBinFromModal = useCallback(() => {
+    if (currentDeleteId) {
+      handleMoveToRecycleBin(currentDeleteId);
+      setDeleteModalVisible(false);
+      setCurrentDeleteId(null);
+    }
+  }, [currentDeleteId, handleMoveToRecycleBin]);
 
   // 处理下载素材包
   const handleDownloadMaterial = useCallback((attachment) => {
@@ -692,7 +749,7 @@ const ProductManagement = () => {
       width: 80,
       render: (_, record) => <Button type="link" danger icon={<DeleteOutlined />} onClick={() => handleDelete(record.id)} />
     },
-  ], [renderProductImage, renderBrandName, renderPriceTiers, handleDownloadMaterial, handleEdit, handleMoveToRecycleBin, handleDelete]);
+  ], [renderProductImage, renderBrandName, renderPriceTiers, handleDownloadMaterial, handleEdit, handleDelete, handleMoveToRecycleBin]);
 
   // 引用保存组件样式重置id
   const styleResetRef = useRef(null);
@@ -943,6 +1000,7 @@ const ProductManagement = () => {
               icon={<PlusOutlined />} 
               style={{ marginRight: 16 }}
               onClick={handleAddProduct}
+              className={styles.addProductBtn}
             >
               添加产品
             </Button>
@@ -1041,6 +1099,31 @@ const ProductManagement = () => {
           onFinish={handleFormFinish}
           onCancel={handleFormCancel}
         />
+      </Modal>
+      
+      {/* 产品删除确认模态框 */}
+      <Modal
+        title="确定要删除本产品吗？"
+        open={deleteModalVisible}
+        onCancel={handleCancelDelete}
+        footer={null}
+        centered
+        width={400}
+        closable={true}
+        closeIcon={<div style={{ fontSize: '24px' }}>×</div>}
+      >
+        <p>放入回收站可恢复，永久删除不可恢复！</p>
+        <div style={{ marginTop: 24, textAlign: 'right' }}>
+          <Button onClick={handleCancelDelete}>
+            取消
+          </Button>
+          <Button onClick={handleMoveToRecycleBinFromModal} style={{ margin: '0 8px' }}>
+            放入回收站
+          </Button>
+          <Button danger onClick={handleConfirmPermanentDelete}>
+            永久删除
+          </Button>
+        </div>
       </Modal>
     </div>
   );

@@ -26,6 +26,18 @@
   align-items: center;
 }
 
+.addProductBtn {
+  background-color: #1890ff;
+  border-color: #1890ff;
+  color: white;
+}
+
+.addProductBtn:hover {
+  background-color: #1890ff;
+  border-color: #1890ff;
+  color: white;
+}
+
 .shareBtn {
   background-color: #67c23a;
   color: white;
@@ -181,8 +193,7 @@
   font-size: 32px;
   color: #333;
   position: absolute;
-  top: 10px;
-  right: 20px;
+  top: -2px;
   cursor: pointer;
   font-weight: bold;
   width: 40px;

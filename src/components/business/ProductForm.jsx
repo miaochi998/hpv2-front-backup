@@ -3,7 +3,13 @@ import {
   Form, Input, Select, Button, Upload, Space, Card, 
   Divider, Row, Col, message, Typography, Tooltip
 } from 'antd';
-import { PlusOutlined, MinusCircleOutlined, PlusCircleOutlined, UploadOutlined } from '@ant-design/icons';
+import { 
+  PlusOutlined, 
+  MinusOutlined, 
+  PlusSquareOutlined, 
+  MinusSquareOutlined, 
+  UploadOutlined 
+} from '@ant-design/icons';
 import request from '@/utils/request';
 import { getImageUrl } from '@/config/urls';
 import styles from './ProductForm.module.css';
@@ -28,6 +34,8 @@ const ProductForm = ({ isEdit = false, initialValues = {}, onFinish, onCancel })
   const [materialList, setMaterialList] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [deletedAttachmentIds, setDeletedAttachmentIds] = useState([]);
+  const [imageFileName, setImageFileName] = useState('');
+  const [materialFileName, setMaterialFileName] = useState('');
 
   // 获取品牌列表
   const fetchBrands = useCallback(async () => {
@@ -98,6 +106,7 @@ const ProductForm = ({ isEdit = false, initialValues = {}, onFinish, onCancel })
             url: imageUrl,
             response: { data: { id: productImage.id } } // 保存附件ID用于编辑时识别
           }]);
+          setImageFileName(productImage.file_name || '产品图片');
         }
         
         // 处理素材包
@@ -112,6 +121,7 @@ const ProductForm = ({ isEdit = false, initialValues = {}, onFinish, onCancel })
             status: 'done',
             response: { data: { id: material.id } } // 保存附件ID用于编辑时识别
           }]);
+          setMaterialFileName(material.file_name || '素材包');
         }
       }
     } else {
@@ -452,16 +462,26 @@ const ProductForm = ({ isEdit = false, initialValues = {}, onFinish, onCancel })
   // 处理图片上传变化
   const handleImageChange = ({ fileList }) => {
     // 检查是否删除了图片
-    if (isEdit && fileList.length === 0 && initialValues.attachments) {
-      // 查找被删除的图片附件ID
-      const imageAttachment = initialValues.attachments.find(
-        attachment => attachment.file_type === 'IMAGE'
-      );
-      
-      if (imageAttachment && imageAttachment.id) {
-        // 将被删除的附件ID添加到deletedAttachmentIds中
-        setDeletedAttachmentIds(prev => [...prev, imageAttachment.id]);
-        console.log('图片已删除，将删除图片附件ID:', imageAttachment.id);
+    if (fileList.length === 0) {
+      if (isEdit && initialValues.attachments) {
+        // 查找被删除的图片附件ID
+        const imageAttachment = initialValues.attachments.find(
+          attachment => attachment.file_type === 'IMAGE'
+        );
+        
+        if (imageAttachment && imageAttachment.id) {
+          // 将被删除的附件ID添加到deletedAttachmentIds中
+          setDeletedAttachmentIds(prev => [...prev, imageAttachment.id]);
+          console.log('图片已删除，将删除图片附件ID:', imageAttachment.id);
+        }
+      }
+      // 删除图片时立即清空文件名
+      setImageFileName('');
+    } else if (fileList.length > 0) {
+      const file = fileList[0];
+      // 仅当文件状态为done时才设置文件名
+      if (file.status === 'done') {
+        setImageFileName(file.name || '');
       }
     }
     
@@ -471,16 +491,26 @@ const ProductForm = ({ isEdit = false, initialValues = {}, onFinish, onCancel })
   // 处理素材包上传变化
   const handleMaterialChange = ({ fileList }) => {
     // 检查是否删除了素材包
-    if (isEdit && fileList.length === 0 && initialValues.attachments) {
-      // 查找被删除的素材包附件ID
-      const materialAttachment = initialValues.attachments.find(
-        attachment => attachment.file_type === 'MATERIAL'
-      );
-      
-      if (materialAttachment && materialAttachment.id) {
-        // 将被删除的附件ID添加到deletedAttachmentIds中
-        setDeletedAttachmentIds(prev => [...prev, materialAttachment.id]);
-        console.log('素材包已删除，将删除素材包附件ID:', materialAttachment.id);
+    if (fileList.length === 0) {
+      if (isEdit && initialValues.attachments) {
+        // 查找被删除的素材包附件ID
+        const materialAttachment = initialValues.attachments.find(
+          attachment => attachment.file_type === 'MATERIAL'
+        );
+        
+        if (materialAttachment && materialAttachment.id) {
+          // 将被删除的附件ID添加到deletedAttachmentIds中
+          setDeletedAttachmentIds(prev => [...prev, materialAttachment.id]);
+          console.log('素材包已删除，将删除素材包附件ID:', materialAttachment.id);
+        }
+      }
+      // 删除素材包时立即清空文件名
+      setMaterialFileName('');
+    } else if (fileList.length > 0) {
+      const file = fileList[0];
+      // 仅当文件状态为done时才设置文件名
+      if (file.status === 'done') {
+        setMaterialFileName(file.name || '');
       }
     }
     
@@ -530,7 +560,7 @@ const ProductForm = ({ isEdit = false, initialValues = {}, onFinish, onCancel })
         initialValues={{ price_tiers: [{ quantity: '', price: '' }] }}
         validateTrigger={['onChange', 'onBlur']}
       >
-        <Row gutter={24}>
+        <Row gutter={16}>
           <Col span={12}>
             <Form.Item
               label="产品名称"
@@ -559,7 +589,7 @@ const ProductForm = ({ isEdit = false, initialValues = {}, onFinish, onCancel })
           </Col>
         </Row>
 
-        <Row gutter={24}>
+        <Row gutter={16}>
           <Col span={12}>
             <Form.Item
               label="货号"
@@ -579,7 +609,7 @@ const ProductForm = ({ isEdit = false, initialValues = {}, onFinish, onCancel })
           </Col>
         </Row>
 
-        <Row gutter={24}>
+        <Row gutter={16}>
           <Col span={12}>
             <Form.Item
               label="净含量"
@@ -598,7 +628,7 @@ const ProductForm = ({ isEdit = false, initialValues = {}, onFinish, onCancel })
           </Col>
         </Row>
 
-        <Row gutter={24}>
+        <Row gutter={16}>
           <Col span={12}>
             <Form.Item
               label="包装方式"
@@ -617,7 +647,7 @@ const ProductForm = ({ isEdit = false, initialValues = {}, onFinish, onCancel })
           </Col>
         </Row>
 
-        <Row gutter={24}>
+        <Row gutter={16}>
           <Col span={12}>
             <Form.Item
               label="包装尺寸"
@@ -691,20 +721,20 @@ const ProductForm = ({ isEdit = false, initialValues = {}, onFinish, onCancel })
                     </Form.Item>
                     <div className={styles.priceTierButtons}>
                       <Button 
-                        type="link" 
-                        icon={<PlusCircleOutlined />} 
+                        icon={<PlusOutlined />} 
                         onClick={() => add({ quantity: '', price: '' }, name + 1)} 
                         className={styles.priceTierAddBtn}
                         title="在此行下方插入新行"
+                        style={{ width: 20, height: 20, minWidth: 20 }}
                       />
                       {fields.length > 1 && (
                         <Button 
-                          type="link" 
                           danger 
-                          icon={<MinusCircleOutlined />} 
+                          icon={<MinusOutlined />} 
                           onClick={() => remove(name)} 
                           className={styles.priceTierRemoveBtn}
                           title="删除此行"
+                          style={{ width: 20, height: 20, minWidth: 20 }}
                         />
                       )}
                     </div>
@@ -715,7 +745,7 @@ const ProductForm = ({ isEdit = false, initialValues = {}, onFinish, onCancel })
                   <Button
                     type="dashed"
                     onClick={() => add({ quantity: '', price: '' })}
-                    icon={<PlusOutlined />}
+                    icon={<PlusSquareOutlined />}
                   >
                     添加价格档位
                   </Button>
@@ -725,34 +755,39 @@ const ProductForm = ({ isEdit = false, initialValues = {}, onFinish, onCancel })
           )}
         </Form.List>
 
-        <Row gutter={24} className={styles.uploadsContainer}>
+        <Row gutter={16} className={styles.uploadsContainer}>
           <Col span={12}>
             <div className={styles.uploadSection}>
               <h3>产品图片</h3>
               <div className={styles.uploadBox}>
-                <Upload
-                  name="file"
-                  listType="picture-card"
-                  fileList={fileList}
-                  beforeUpload={beforeUpload}
-                  onChange={handleImageChange}
-                  customRequest={customRequest}
-                  maxCount={1}
-                  className={styles.productImageUpload}
-                >
-                  {fileList.length >= 1 ? null : (
-                    <div>
-                      <div className={styles.uploadImageIcon}></div>
-                    </div>
+                <div className={styles.uploadContent}>
+                  <Upload
+                    name="file"
+                    listType="picture-card"
+                    fileList={fileList}
+                    beforeUpload={beforeUpload}
+                    onChange={handleImageChange}
+                    customRequest={customRequest}
+                    maxCount={1}
+                    className={styles.productImageUpload}
+                    showUploadList={{
+                      showPreviewIcon: false,
+                      showRemoveIcon: true,
+                      showDownloadIcon: false
+                    }}
+                  >
+                    {fileList.length >= 1 ? null : (
+                      <div className={styles.uploadPlaceholder}>
+                        <div className={styles.uploadImageIcon}></div>
+                      </div>
+                    )}
+                  </Upload>
+                  {fileList.length > 0 && fileList[0].status === 'done' && imageFileName && (
+                    <div className={styles.fileName}>{imageFileName}</div>
                   )}
-                </Upload>
+                </div>
                 <div className={styles.uploadTips}>
-                  <p>图片最大不超过20MB</p>
-                  <p>仅支持 JPG、PNG、JPEG、GIF格式</p>
-                  <p>建议尺寸800x800</p>
-                  <Button type="primary" className={styles.uploadBtn}>
-                    上传图片
-                  </Button>
+                  <p>支持JPG/PNG/JPEG/GIF格式 小于20MB</p>
                 </div>
               </div>
             </div>
@@ -761,27 +796,37 @@ const ProductForm = ({ isEdit = false, initialValues = {}, onFinish, onCancel })
             <div className={styles.uploadSection}>
               <h3>产品素材包</h3>
               <div className={styles.uploadBox}>
-                <Upload
-                  name="file"
-                  fileList={materialList}
-                  beforeUpload={beforeUploadMaterial}
-                  onChange={handleMaterialChange}
-                  customRequest={customRequest}
-                  maxCount={1}
-                  className={styles.materialUpload}
-                >
-                  {materialList.length >= 1 ? null : (
-                    <div>
+                <div className={styles.uploadContent}>
+                  <Upload
+                    name="file"
+                    listType="picture-card"
+                    fileList={materialList}
+                    beforeUpload={beforeUploadMaterial}
+                    onChange={handleMaterialChange}
+                    customRequest={customRequest}
+                    maxCount={1}
+                    className={styles.materialUpload}
+                    showUploadList={{
+                      showPreviewIcon: false,
+                      showRemoveIcon: true,
+                      showDownloadIcon: false
+                    }}
+                    iconRender={() => (
                       <div className={styles.uploadMaterialIcon}></div>
-                    </div>
+                    )}
+                  >
+                    {materialList.length >= 1 ? null : (
+                      <div className={styles.uploadPlaceholder}>
+                        <div className={styles.uploadMaterialIcon}></div>
+                      </div>
+                    )}
+                  </Upload>
+                  {materialList.length > 0 && materialList[0].status === 'done' && materialFileName && (
+                    <div className={styles.fileName}>{materialFileName}</div>
                   )}
-                </Upload>
+                </div>
                 <div className={styles.uploadTips}>
-                  <p>文件最大不超过500MB</p>
-                  <p>仅支持 RAR、ZIP、7Z格式</p>
-                  <Button type="primary" className={styles.uploadBtn}>
-                    上传图片
-                  </Button>
+                  <p>支持RAR/ZIP/7Z格式 小于500MB</p>
                 </div>
               </div>
             </div>
