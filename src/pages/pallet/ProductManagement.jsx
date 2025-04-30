@@ -6,7 +6,8 @@ import request from '@/utils/request';
 import DataTable from '@/components/common/DataTable';
 import styles from './ProductManagement.module.css';
 import { commonSearch } from '@/api/common';
-import { getImageUrl } from '@/config/urls';
+import { getImageUrl, getApiBaseUrl } from '@/config/urls';
+import ProductForm from '@/components/business/ProductForm';
 
 const { Title } = Typography;
 const { Option } = Select;
@@ -177,6 +178,9 @@ const ProductManagement = () => {
   const [previewImage, setPreviewImage] = useState('');
   const [previewTitle, setPreviewTitle] = useState('');
   const [previewLoading, setPreviewLoading] = useState(false);
+  const [isFormVisible, setIsFormVisible] = useState(false);
+  const [currentProduct, setCurrentProduct] = useState(null);
+  const [isEdit, setIsEdit] = useState(false);
   
   // 根据用户角色确定固定的所有者类型 - 管理员查看公司总货盘，普通用户查看个人货盘
   const ownerType = isAdmin ? 'COMPANY' : 'SELLER';
@@ -312,27 +316,123 @@ const ProductManagement = () => {
     setPreviewVisible(false);
   }, []);
 
-  // 简化待实现功能函数
-  const handleAddProduct = useCallback(() => {
-    message.info('添加产品功能待实现');
-  }, []);
+  // 获取产品列表
+  const getProducts = async () => {
+    // ... existing code ...
+  };
 
-  const handleEdit = useCallback((record) => {
-    message.info(`编辑产品功能待实现，产品ID: ${record.id}`);
-  }, []);
+  // 处理搜索
+  const handleSearch = () => {
+    // ... existing code ...
+  };
 
+  // 添加产品
+  const handleAddProduct = () => {
+    setIsFormVisible(true);
+    setIsEdit(false);
+    setCurrentProduct(null);
+  };
+
+  // 编辑产品
+  const handleEdit = async (record) => {
+    try {
+      setLoading(true);
+      // 获取产品详情，包括价格档位和附件信息
+      const response = await request({
+        url: `/api/pallet/products/${record.id}`,
+        method: 'GET'
+      });
+      
+      if (response && response.code === 200) {
+        setCurrentProduct(response.data);
+        setIsEdit(true);
+        setIsFormVisible(true);
+      }
+    } catch (error) {
+      console.error('获取产品详情失败:', error);
+      message.error('获取产品详情失败');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 处理产品表单完成
+  const handleFormFinish = (productId, savedProduct) => {
+    setIsFormVisible(false);
+    
+    // 立即刷新产品列表
+    if (fetchProductsRef.current) {
+      console.log('[表单完成] 刷新产品列表', { productId, savedProduct });
+      fetchProductsRef.current(
+        pagination.current, 
+        pagination.pageSize, 
+        searchParams.keyword, 
+        searchParams.brand_id,
+        searchParams.sort_field,
+        searchParams.sort_order
+      );
+    }
+  };
+
+  // 取消表单
+  const handleFormCancel = () => {
+    setIsFormVisible(false);
+  };
+
+  // 处理产品删除
   const handleDelete = useCallback((id) => {
     message.info(`删除产品功能待实现，产品ID: ${id}`);
   }, []);
 
+  // 处理产品移动到回收站
   const handleMoveToRecycleBin = useCallback((id) => {
     message.info(`放入回收站功能待实现，产品ID: ${id}`);
   }, []);
 
+  // 处理下载素材包
   const handleDownloadMaterial = useCallback((attachment) => {
-    message.info(`下载素材包功能待实现，附件ID: ${attachment.id}`);
+    if (!attachment || !attachment.id) {
+      message.error('素材包不存在');
+      return;
+    }
+    
+    try {
+      // 直接使用附件的文件路径
+      if (attachment.file_path) {
+        // 构建完整的文件URL
+        const fileUrl = getImageUrl(attachment.file_path);
+        
+        // 记录下载请求
+        console.log('下载素材包', {
+          attachmentId: attachment.id,
+          fileName: attachment.file_name,
+          fileUrl
+        });
+        
+        // 使用隐藏的a标签触发文件下载
+        const link = document.createElement('a');
+        link.href = fileUrl;
+        
+        // 设置下载文件名
+        const fileName = attachment.file_name || `素材包_${attachment.id}`;
+        link.setAttribute('download', fileName);
+        
+        // 触发下载
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        message.success('素材包下载已开始');
+      } else {
+        message.error('素材包文件路径不存在');
+      }
+    } catch (error) {
+      console.error('下载素材包失败', error);
+      message.error('下载素材包失败：' + (error.message || '未知错误'));
+    }
   }, []);
 
+  // 处理分享货盘
   const handleSharePallet = useCallback(() => {
     message.info('分享货盘功能待实现');
   }, []);
@@ -918,6 +1018,29 @@ const ProductManagement = () => {
             />
           )}
         </div>
+      </Modal>
+      
+      {/* 添加编辑产品表单弹窗 */}
+      <Modal
+        open={isFormVisible}
+        onCancel={handleFormCancel}
+        footer={null}
+        width={960}
+        style={{ top: 20 }}
+        destroyOnClose
+        closeIcon={<div className={styles.closeModalIcon}>×</div>}
+        styles={{
+          body: { padding: 0 }
+        }}
+        maskClosable={false}
+        className={styles.productFormModal}
+      >
+        <ProductForm
+          isEdit={isEdit}
+          initialValues={currentProduct}
+          onFinish={handleFormFinish}
+          onCancel={handleFormCancel}
+        />
       </Modal>
     </div>
   );

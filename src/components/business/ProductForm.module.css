@@ -1,0 +1,213 @@
+.productForm {
+  background-color: #fff;
+  padding: 24px 30px;
+  border-radius: 8px;
+  margin-bottom: 24px;
+  font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
+
+.formTitle {
+  font-size: 24px;
+  font-weight: 500;
+  margin-bottom: 24px;
+  color: #333;
+}
+
+.formActions {
+  margin-top: 30px;
+  text-align: center;
+}
+
+.submitBtn {
+  width: 100%;
+  height: 45px;
+  font-size: 16px;
+  background-color: #8BC34A;
+  border-color: #8BC34A;
+}
+
+.submitBtn:hover {
+  background-color: #7CB342;
+  border-color: #7CB342;
+}
+
+/* 分区标题样式 */
+.sectionTitle {
+  font-size: 18px;
+  font-weight: 500;
+  margin: 30px 0 15px;
+  color: #333;
+}
+
+/* 价格档位样式 */
+.priceTierHeader {
+  display: flex;
+  margin-bottom: 8px;
+  color: #666;
+}
+
+.priceTierLabel {
+  flex: 1;
+  padding: 0 8px;
+  font-weight: 500;
+}
+
+.priceTierAction {
+  width: 90px;
+}
+
+.priceTierItem {
+  display: flex;
+  margin-bottom: 12px;
+  align-items: center;
+}
+
+.priceTierField {
+  flex: 1;
+  margin-bottom: 0;
+  margin-right: 16px;
+}
+
+.priceTierButtons {
+  display: flex;
+  width: 90px;
+  justify-content: flex-start;
+}
+
+.priceTierAddBtn,
+.priceTierRemoveBtn {
+  padding: 0;
+  margin-right: 8px;
+}
+
+.priceTierAddBtn {
+  color: #8BC34A;
+}
+
+.priceTierRemoveBtn {
+  color: #f5222d;
+}
+
+/* 无价格档位时的样式 */
+.noPriceTiers {
+  text-align: center;
+  padding: 20px 0;
+  border: 1px dashed #d9d9d9;
+  border-radius: 6px;
+  background-color: #fafafa;
+  margin-bottom: 20px;
+}
+
+.noPriceTiers button {
+  color: #8BC34A;
+  border-color: #8BC34A;
+}
+
+.noPriceTiers button:hover {
+  color: #7CB342;
+  border-color: #7CB342;
+}
+
+/* 上传区域样式 */
+.uploadsContainer {
+  margin-top: 30px;
+}
+
+.uploadSection {
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  padding: 15px;
+  height: 300px;
+}
+
+.uploadSection h3 {
+  font-size: 16px;
+  font-weight: 500;
+  margin-bottom: 15px;
+  color: #333;
+}
+
+.uploadBox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 230px;
+  background: #fff;
+  border-radius: 6px;
+  border: 1px dashed #d9d9d9;
+}
+
+.productImageUpload,
+.materialUpload {
+  width: 200px;
+  text-align: center;
+}
+
+.uploadImageIcon {
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%231890ff"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-5.04-6.71l-2.75 3.54-1.96-2.36L6.5 17h11l-3.54-4.71z"/></svg>');
+  width: 56px;
+  height: 56px;
+  margin: 0 auto;
+}
+
+.uploadMaterialIcon {
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%231890ff"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11zM8 15.01l1.41 1.41L11 14.84V19h2v-4.16l1.59 1.59L16 15.01 12.01 11 8 15.01z"/></svg>');
+  width: 56px;
+  height: 56px;
+  margin: 0 auto;
+}
+
+.uploadTips {
+  margin-left: 20px;
+  color: #666;
+}
+
+.uploadTips p {
+  margin-bottom: 4px;
+  font-size: 12px;
+}
+
+.uploadBtn {
+  margin-top: 12px;
+  background-color: #1890ff;
+  border-color: #1890ff;
+}
+
+/* 覆盖 Ant Design 默认上传组件样式 */
+:global(.ant-upload-list-picture-card-container) {
+  width: 104px !important;
+  height: 104px !important;
+}
+
+:global(.ant-upload.ant-upload-select-picture-card) {
+  width: 104px !important;
+  height: 104px !important;
+  margin-right: 0;
+  margin-bottom: 0;
+  border: 2px dashed #d9d9d9;
+}
+
+/* 动态添加Form.Item的错误样式修复 */
+:global(.ant-form-item-explain-error) {
+  font-size: 12px;
+}
+
+/* 表单项样式 */
+:global(.ant-form-item-label > label) {
+  font-weight: 500;
+  color: #333;
+}
+
+:global(.ant-input) {
+  height: 38px;
+}
+
+:global(.ant-btn-primary) {
+  background-color: #8BC34A;
+  border-color: #8BC34A;
+}
+
+:global(.ant-btn-primary:hover) {
+  background-color: #7CB342;
+  border-color: #7CB342;
+} 

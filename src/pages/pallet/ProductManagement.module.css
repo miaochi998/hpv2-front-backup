@@ -169,4 +169,47 @@
 :global(.product-image-preview-modal .ant-modal-close:hover) {
   color: #1890ff;
   background: white;
+}
+
+/* 产品表单弹窗样式 */
+.productFormModal :global(.ant-modal-content) {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.closeModalIcon {
+  font-size: 32px;
+  color: #333;
+  position: absolute;
+  top: 10px;
+  right: 20px;
+  cursor: pointer;
+  font-weight: bold;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+/* 表格样式调整 */
+.table :global(.ant-table-thead > tr > th) {
+  background-color: #f0f0f0;
+  color: #333;
+  font-weight: 500;
+}
+
+.table :global(.ant-table-tbody > tr > td) {
+  padding: 12px 16px;
+}
+
+/* 适配表单图片上传区域 */
+:global(.ant-upload-list-picture-card .ant-upload-list-item-info::before) {
+  left: 0;
+}
+
+/* 调整操作按钮间距 */
+:global(.ant-space-align-center) {
+  gap: 4px !important;
 } 
