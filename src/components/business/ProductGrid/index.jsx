@@ -94,6 +94,9 @@ const ProductGrid = ({
       return <div className="price-tier-empty">暂无价格档位</div>;
     }
 
+    // 只有一行时，添加特殊的内联样式处理边框问题
+    const isSingleRow = priceTiers.length === 1;
+    
     return (
       <div className="price-tiers-container">
         <div className="price-tiers-header">
@@ -101,9 +104,23 @@ const ProductGrid = ({
           <div className="tier-price-header">单价</div>
         </div>
         {priceTiers.map((tier, index) => (
-          <div key={tier.id || index} className="price-tier-row">
-            <div className="tier-qty">{`≤${tier.quantity}`}</div>
-            <div className="tier-price">{tier.price}</div>
+          <div 
+            key={tier.id || index} 
+            className="price-tier-row"
+            style={isSingleRow ? { height: '100%', flex: '1' } : {}}
+          >
+            <div 
+              className="tier-qty"
+              style={isSingleRow ? { 
+                height: '100%',
+                position: 'relative',
+                borderRight: '1px solid #f0f0f0',
+              } : {}}
+            >{`≤${tier.quantity}`}</div>
+            <div 
+              className="tier-price"
+              style={isSingleRow ? { height: '100%' } : {}}
+            >{tier.price}</div>
           </div>
         ))}
       </div>

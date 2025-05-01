@@ -18,7 +18,7 @@
   grid-template-columns: 
     60px               /* 序号 */
     100px              /* 图片 */
-    minmax(150px, 1fr) /* 名称 - 可伸缩 */
+    150px              /* 名称 - 固定宽度 */
     120px              /* 品牌 */
     120px              /* 货号 */
     120px              /* 规格 */
@@ -62,7 +62,7 @@
   grid-template-columns: 
     60px               /* 序号 */
     100px              /* 图片 */
-    minmax(150px, 1fr) /* 名称 - 可伸缩 */
+    150px              /* 名称 - 固定宽度 */
     120px              /* 品牌 */
     120px              /* 货号 */
     120px              /* 规格 */
@@ -139,18 +139,22 @@
   display: flex;
   flex-direction: column;
   flex: 1; /* 使容器填充可用空间 */
+  height: auto; /* 修改：确保容器高度自适应内容 */
+  min-height: 100%; /* 添加：确保至少填满父容器 */
 }
 
-/* 确保价格档位行在只有一行时也能填满容器 */
+/* 确保价格档位行能自适应内容高度 */
 .price-tier-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
   border-bottom: 1px solid #f0f0f0;
-  flex: 1; /* 添加flex属性使其能够拉伸 */
+  flex: 0 0 auto; /* 高度由内容决定 */
   min-height: 32px; /* 设置最小高度 */
-  align-items: center; /* 垂直居中 */
+  align-items: stretch; /* 使子元素填充整个高度 */
+  height: auto; /* 高度自适应内容 */
 }
 
+/* 确保最后一行没有底部边框 */
 .price-tier-row:last-child {
   border-bottom: none;
 }
@@ -173,11 +177,20 @@
 }
 
 /* 文字溢出处理 */
-.grid-col-name, 
+.grid-col-name {
+  white-space: normal; /* 允许内容换行 */
+  overflow: hidden; /* 确保不会溢出容器 */
+  word-break: break-word; /* 添加自动换行 */
+  max-width: 150px; /* 添加最大宽度限制 */
+  width: 100%; /* 确保占满分配的空间 */
+  text-overflow: initial; /* 覆盖父类的text-overflow值 */
+  box-sizing: border-box; /* 确保padding不会增加宽度 */
+}
+
 .grid-col-spec {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal; /* 修改：删除nowrap，允许内容换行 */
+  overflow: visible; /* 修改：允许内容可见，不被隐藏 */
+  word-break: break-word; /* 修改：添加自动换行 */
 }
 
 /* 价格档位样式 */
@@ -188,7 +201,7 @@
   font-size: 12px;
   display: flex;
   flex-direction: column;
-  justify-content: center; /* 垂直居中 */
+  justify-content: flex-start; /* 修改：从center改为flex-start，使内容从顶部开始排列 */
 }
 
 .price-tiers-header {
@@ -221,7 +234,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 100%;
+  min-height: 32px; /* 最小高度确保基本显示 */
+  height: 100%; /* 使其填充父容器高度 */
+  word-break: break-word; /* 确保文本可以换行 */
+  white-space: normal; /* 确保文本可以换行 */
+  overflow: hidden; /* 确保内容不会溢出 */
 }
 
 .tier-qty {
@@ -409,6 +426,7 @@
 /* 修改价格档位容器在数据行中的样式 */
 .product-grid-row .grid-col.grid-col-price-tier {
   display: flex;
-  align-items: center;
+  align-items: flex-start; /* 修改：从center改为flex-start，确保内容从顶部开始排列 */
   padding: 0;
+  height: auto; /* 添加：确保高度自适应内容 */
 } 
