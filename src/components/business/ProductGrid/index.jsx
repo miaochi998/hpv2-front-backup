@@ -133,9 +133,12 @@ const ProductGrid = ({
     );
   };
 
-  // 处理视图模式切换
+  // 处理视图模式切换，确保不影响产品顺序
   const handleViewModeChange = (e) => {
     setViewMode(e.target.value);
+    
+    // 视图切换时不主动请求数据，只更新视图模式
+    console.log('[排序调试] 仅切换视图模式，不改变数据排序');
   };
 
   // 渲染表格视图
@@ -299,7 +302,7 @@ const ProductGrid = ({
         {viewMode === 'table' ? renderTableView() : renderCardView()}
       </Spin>
 
-      {/* 分页器 - 使用最简单的实现方式 */}
+      {/* 分页器 */}
       <div className="product-grid-pagination">
         <Pagination
           current={pagination.current}
@@ -310,16 +313,53 @@ const ProductGrid = ({
           showQuickJumper
           showTotal={(total) => `共 ${total} 条记录`}
           onChange={(page, pageSize) => {
-            // 明确传递page和pageSize
+            // 明确传递page和pageSize，同时保持created_at降序排序
+            console.log('[排序调试] 分页变化，保持created_at降序排序');
             if (onTableChange) {
-              onTableChange({
-                current: page,
-                pageSize: pageSize
-              }, {}, {});
+              onTableChange(
+                {
+                  current: page,
+                  pageSize: pageSize
+                }, 
+                {}, 
+                {
+                  field: 'created_at', 
+                  order: 'descend'
+                }
+              );
+            }
+          }}
+          onShowSizeChange={(current, size) => {
+            // 确保每页大小变化时，强制使用created_at降序排序并回到第一页
+            console.log('[排序调试] 每页条数变化，保持created_at降序排序并回到第一页');
+            if (onTableChange) {
+              onTableChange(
+                {
+                  current: 1, // 始终回到第一页
+                  pageSize: size
+                },
+                {},
+                {
+                  field: 'created_at',
+                  order: 'descend'
+                }
+              );
             }
           }}
         />
       </div>
+
+      {/* 添加调试信息 */}
+      {process.env.NODE_ENV === 'development' && products.length > 0 && (
+        <div style={{ marginTop: '20px', padding: '10px', background: '#f5f5f5', fontSize: '12px', display: 'none' }}>
+          <div><strong>排序调试信息</strong> (按创建时间降序)</div>
+          {products.slice(0, 5).map((product, index) => (
+            <div key={product.id} style={{ margin: '5px 0' }}>
+              {index+1}. ID: {product.id}, 名称: {product.name}, 创建时间: {new Date(product.created_at).toLocaleString()}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

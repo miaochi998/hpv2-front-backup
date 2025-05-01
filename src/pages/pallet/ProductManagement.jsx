@@ -17,15 +17,28 @@ const createProductFetcher = (setLoading, setIsSearching, setProducts, setPagina
   return async (page, pageSize, keyword, brandId, sortField, sortOrder) => {
     setLoading(true);
     
+    // 使用updated_at降序排序作为默认值，保持接收参数的灵活性
+    const actualSortField = sortField || 'updated_at';
+    const actualSortOrder = sortOrder || 'desc';
+    
+    // 记录调试信息
+    console.log('[排序] API请求参数:', {
+      page, pageSize, keyword, brandId, 
+      requestedSortField: sortField,
+      requestedSortOrder: sortOrder,
+      actualSortField,
+      actualSortOrder
+    });
+    
     try {
       // 判断是否为搜索模式
       const isSearchMode = keyword && keyword.trim() !== '';
       setIsSearching(isSearchMode);
 
-      // 构建通用的查询参数
+      // 构建通用的查询参数，使用指定的排序参数
       const commonParams = {
-        sort_field: sortField,
-        sort_order: sortOrder,
+        sort_field: actualSortField,
+        sort_order: actualSortOrder,
         with_price_tiers: true,
         with_attachments: true,
         owner_type: ownerType
@@ -57,6 +70,24 @@ const createProductFetcher = (setLoading, setIsSearching, setProducts, setPagina
         });
       }
 
+      // 输出API响应，帮助调试
+      console.log('[API响应]', {
+        status: response?.code,
+        itemCount: response?.data?.items?.length || 0,
+        requestParams: commonParams
+      });
+      
+      // 添加排序调试信息
+      if (response?.data?.items?.length > 0) {
+        const first3Items = response.data.items.slice(0, 3);
+        console.log('[排序] 前3个产品数据:', first3Items.map(item => ({
+          id: item.id,
+          name: item.name, 
+          created_at: item.created_at,
+          updated_at: item.updated_at
+        })));
+      }
+      
       // 统一处理响应
       if (response && response.code === 200 && response.data) {
         let productList = [];
@@ -156,6 +187,8 @@ const ProductManagement = () => {
   const searchTimerRef = useRef(null);
   // 用于保存fetchProducts函数的引用
   const fetchProductsRef = useRef(null);
+  // 用于标记是否已经初始化数据
+  const initializedRef = useRef(false);
   
   // 状态管理
   const [products, setProducts] = useState([]);
@@ -168,10 +201,12 @@ const ProductManagement = () => {
     total: 0,
     totalPages: 0
   });
+  
+  // 搜索参数 - 注意排序字段只能是backend支持的字段
   const [searchParams, setSearchParams] = useState({
     keyword: '',
     brand_id: null, // 添加品牌ID字段用于筛选
-    sort_field: 'updated_at',
+    sort_field: 'updated_at', // 后端只支持 name, product_code, created_at, updated_at, brand_id
     sort_order: 'desc'
   });
   const [previewVisible, setPreviewVisible] = useState(false);
@@ -187,8 +222,52 @@ const ProductManagement = () => {
   // 根据用户角色确定固定的所有者类型 - 管理员查看公司总货盘，普通用户查看个人货盘
   const ownerType = isAdmin ? 'COMPANY' : 'SELLER';
 
+  // 获取品牌列表 - 仅用于显示，不再用于筛选
+  const fetchBrands = useCallback(async () => {
+    try {
+      const response = await request({
+        url: '/api/pallet/brands',
+        method: 'GET',
+        params: {
+          status: 'ACTIVE'
+        }
+      });
+      
+      if (response && response.data && response.data.list && Array.isArray(response.data.list)) {
+        console.log('[产品] 成功获取品牌列表, 数量:', response.data.list.length);
+        setBrands(response.data.list);
+        return response.data.list; // 返回品牌数据，方便后续使用
+      } else {
+        console.error('[产品] 获取品牌列表格式错误或为空');
+        message.error('获取品牌列表失败');
+        return [];
+      }
+    } catch (error) {
+      console.error('[产品] 获取品牌列表失败:', error);
+      message.error('获取品牌列表失败');
+      return [];
+    }
+  }, [message]);
+
+  // 优化原生select元素的样式，提升用户体验
+  const selectStyle = {
+    width: '100%', 
+    height: '32px',
+    padding: '4px 11px',
+    borderRadius: '6px',
+    border: '1px solid #d9d9d9',
+    fontSize: '14px',
+    boxSizing: 'border-box',
+    outline: 'none',
+    backgroundColor: '#fff',
+    color: 'rgba(0, 0, 0, 0.85)',
+    cursor: 'pointer',
+    appearance: 'auto',  // 确保下拉箭头在各浏览器中显示
+    transition: 'all 0.3s'
+  };
+
   // 优化processProductData函数，减少不必要的请求和数据处理
-  const processProductData = async (products) => {
+  const processProductData = useCallback(async (products) => {
     if (!products || products.length === 0) return [];
     
     // 创建产品ID到产品的映射，以便后续更新
@@ -264,12 +343,12 @@ const ProductManagement = () => {
       // 出错时返回原始产品列表
       return products;
     }
-  };
+  }, []);
 
   // 在useEffect中创建fetchProducts函数
   useEffect(() => {
     // 创建fetchProducts函数
-    console.log('[PRODUCT] 创建fetchProducts函数');
+    console.log('[产品] 创建fetchProducts函数');
     fetchProductsRef.current = createProductFetcher(
       setLoading, 
       setIsSearching, 
@@ -284,7 +363,7 @@ const ProductManagement = () => {
     return () => {
       fetchProductsRef.current = null;
     };
-  }, [ownerType, message]);
+  }, [ownerType, message, processProductData]);
 
   // 包装函数，确保在fetchProductsRef.current已赋值后调用
   const fetchProducts = useCallback(function fetchProductsWrapper(
@@ -295,7 +374,7 @@ const ProductManagement = () => {
     sortField = searchParams.sort_field, 
     sortOrder = searchParams.sort_order
   ) {
-    console.log('[PRODUCT] 执行fetchProducts:', { page, pageSize, keyword, brandId, sortField, sortOrder });
+    console.log('[产品] 执行fetchProducts:', { page, pageSize, keyword, brandId, sortField, sortOrder });
     
     if (fetchProductsRef.current) {
       return fetchProductsRef.current(
@@ -308,7 +387,7 @@ const ProductManagement = () => {
       );
     } else {
       console.error('fetchProductsRef.current 未初始化');
-    return Promise.resolve();
+      return Promise.resolve();
     }
   }, [pagination.current, pagination.pageSize, searchParams]);
 
@@ -316,14 +395,21 @@ const ProductManagement = () => {
   useEffect(() => {
     // 如果fetchProductsRef未初始化，直接返回
     if (!fetchProductsRef.current) {
-      console.log('[PRODUCT] 等待fetchProductsRef初始化...');
+      console.log('[产品] 等待fetchProductsRef初始化...');
       return;
     }
+    
+    // 仅在组件挂载时加载一次数据
+    if (initializedRef.current) {
+      return;
+    }
+    
+    initializedRef.current = true;
     
     // 数据加载函数
     async function loadInitialData() {
       try {
-        console.log('[PRODUCT] 开始加载初始数据');
+        console.log('[产品] 开始加载初始数据');
         
         // 先获取品牌列表
         await fetchBrands();
@@ -338,19 +424,55 @@ const ProductManagement = () => {
           total: 0
         });
         
-        // 记录关键日志
-        console.log('[PRODUCT] 初始化加载数据，即将调用 fetchProducts:', { page: 1, pageSize });
+        // 使用updated_at降序排序
+        const initialSortField = 'updated_at';
+        const initialSortOrder = 'desc';
         
-        // 获取产品列表
-        await fetchProducts(1, pageSize);
+        // 重置搜索参数
+        setSearchParams({
+          keyword: '',
+          brand_id: null,
+          sort_field: initialSortField,
+          sort_order: initialSortOrder
+        });
+        
+        // 记录关键日志
+        console.log('[产品] 初始化加载数据，即将调用 fetchProducts:', { 
+          page: 1, 
+          pageSize,
+          sort_field: initialSortField,
+          sort_order: initialSortOrder
+        });
+        
+        // 获取产品列表，使用正确的排序参数
+        await fetchProducts(1, pageSize, '', null, initialSortField, initialSortOrder);
       } catch (error) {
-        console.error('[PRODUCT] 初始化加载数据失败:', error);
+        console.error('[产品] 初始化加载数据失败:', error);
         message.error('数据加载失败，请刷新页面重试');
       }
     }
     
     loadInitialData();
-  }, [fetchProductsRef.current]);
+  }, [fetchBrands, fetchProducts, message, setPagination, setSearchParams]);
+
+  // 添加效果确保按updated_at排序
+  useEffect(() => {
+    // 确保产品已加载
+    if (products.length > 0) {
+      // 手动按updated_at降序排序，确保前端显示顺序正确
+      const sortedProducts = [...products].sort((a, b) => {
+        const dateA = new Date(a.updated_at || 0);
+        const dateB = new Date(b.updated_at || 0);
+        return dateB - dateA; // 降序
+      });
+      
+      // 检查排序是否正确
+      if (JSON.stringify(products) !== JSON.stringify(sortedProducts)) {
+        console.log('[排序] 前端手动排序：发现顺序不匹配，强制更正');
+        setProducts(sortedProducts);
+      }
+    }
+  }, [products]);
 
   // 处理图片预览
   const handleImagePreview = (imageUrl, title = '产品图片') => {
@@ -427,35 +549,38 @@ const ProductManagement = () => {
       
       const response = await request({
         url: `/api/pallet/products/${productId}/recycle`,
-        method: 'POST'
+        method: 'POST',
+        data: {
+          confirm: true
+        }
       });
       
       if (response.code === 200) {
         message.success({ content: '已成功放入回收站', key: 'recycle', duration: 2 });
-        // 从当前列表中移除
-        setProducts(prev => prev.filter(item => item.id !== productId));
-        // 更新总数
-        setPagination(prev => ({
+        
+        // 重置搜索参数，确保始终按创建时间降序排序
+        setSearchParams(prev => ({
           ...prev,
-          total: prev.total - 1
+          sort_field: 'updated_at',
+          sort_order: 'desc'
         }));
+        
+        // 刷新产品列表
+        fetchProducts(
+          pagination.current, 
+          pagination.pageSize, 
+          searchParams.keyword, 
+          searchParams.brand_id,
+          'updated_at',
+          'desc'
+        );
       } else {
         message.error({ content: response.message || '操作失败', key: 'recycle', duration: 2 });
       }
     } catch (error) {
       console.error('移动到回收站失败:', error);
-      message.error({ content: '移动到回收站失败', key: 'recycle', duration: 2 });
+      message.error({ content: '移动到回收站失败: ' + error.message, key: 'recycle', duration: 2 });
     }
-  };
-
-  // 获取产品列表
-  const getProducts = async () => {
-    // ... existing code ...
-  };
-
-  // 处理搜索
-  const handleSearch = () => {
-    // ... existing code ...
   };
 
   // 添加产品
@@ -489,22 +614,30 @@ const ProductManagement = () => {
   };
 
   // 处理产品表单完成
-  const handleFormFinish = (productId, savedProduct) => {
+  const handleFormFinish = useCallback((productId, savedProduct) => {
     setIsFormVisible(false);
     
-    // 立即刷新产品列表
+    // 重置搜索参数，确保始终按最后更新时间降序排序
+    setSearchParams(prev => ({
+      ...prev,
+      sort_field: 'updated_at',
+      sort_order: 'desc'
+    }));
+    
+    // 确保使用正确的排序字段重新加载列表
+    console.log('[表单完成] 刷新产品列表', { productId, savedProduct });
     if (fetchProductsRef.current) {
-      console.log('[表单完成] 刷新产品列表', { productId, savedProduct });
+      // 始终重置到第一页，并使用正确的排序规则
       fetchProductsRef.current(
-        pagination.current, 
+        1, 
         pagination.pageSize, 
         searchParams.keyword, 
         searchParams.brand_id,
-        searchParams.sort_field,
-        searchParams.sort_order
+        'updated_at',
+        'desc'
       );
     }
-  };
+  }, [pagination.pageSize, searchParams.keyword, searchParams.brand_id, setSearchParams]);
 
   // 取消表单
   const handleFormCancel = () => {
@@ -525,7 +658,7 @@ const ProductManagement = () => {
       setLoading(true);
       
       const response = await request({
-        url: `/api/pallet/products/${currentDeleteId}`,
+        url: `/api/pallet/products/${currentDeleteId}/permanent`,
         method: 'DELETE'
       });
       
@@ -535,14 +668,21 @@ const ProductManagement = () => {
         // 关闭对话框
         setDeleteModalVisible(false);
         
-        // 刷新产品列表
+        // 重置搜索参数，确保始终按创建时间降序排序
+        setSearchParams(prev => ({
+          ...prev,
+          sort_field: 'updated_at',
+          sort_order: 'desc'
+        }));
+        
+        // 刷新产品列表 - 强制使用正确的排序参数
         fetchProducts(
             pagination.current, 
             pagination.pageSize, 
             searchParams.keyword, 
             searchParams.brand_id,
-            searchParams.sort_field,
-            searchParams.sort_order
+            'updated_at',
+            'desc'
           );
       } else {
         message.error(response?.message || '删除失败');
@@ -570,10 +710,11 @@ const ProductManagement = () => {
 
   // 处理表格分页、排序和筛选变化
   const handleTableChange = useCallback((newPagination, filters, sorter) => {
-    // 打印关键信息用于调试
-    console.log('[PRODUCT] 表格变化', {
+    // 记录日志
+    console.log('[排序] 表格变化事件', {
       newPagination,
-      currentPagination: pagination
+      currentPagination: pagination,
+      sorter
     });
     
     if (!fetchProductsRef.current) {
@@ -590,21 +731,16 @@ const ProductManagement = () => {
     // 如果分页大小变化，重置为第一页
     const newPage = isPageSizeChanged ? 1 : current;
       
-    // 获取排序参数
-    let sortField = searchParams.sort_field;
-    let sortOrder = searchParams.sort_order;
+    // 强制使用updated_at降序排序
+    const sortField = 'updated_at';
+    const sortOrder = 'desc';
     
-    if (sorter && sorter.field && sorter.order) {
-      sortField = sorter.field;
-      sortOrder = sorter.order === 'ascend' ? 'asc' : 'desc';
-      
-      // 更新排序参数
-      setSearchParams(prev => ({
-        ...prev,
-        sort_field: sortField,
-        sort_order: sortOrder
-      }));
-    }
+    // 更新排序参数
+    setSearchParams(prev => ({
+      ...prev,
+      sort_field: sortField,
+      sort_order: sortOrder
+    }));
       
     // 更新分页状态
     setPagination({
@@ -613,71 +749,24 @@ const ProductManagement = () => {
       total: pagination.total
     });
     
-    // 发起请求
-    console.log('[PRODUCT] 获取数据:', {
+    // 添加记录
+    console.log('[排序] 发送API请求参数:', {
       page: newPage,
       pageSize,
-      keyword: searchParams.keyword,
-      brandId: searchParams.brand_id,
-      sortField,
-      sortOrder
+      sort_field: searchParams.sort_field,
+      sort_order: searchParams.sort_order
     });
     
-      fetchProducts(
+    // 发起请求 - 使用搜索参数中的排序设置
+    fetchProducts(
       newPage,
       pageSize,
-        searchParams.keyword,
+      searchParams.keyword,
       searchParams.brand_id,
-      sortField,
-      sortOrder
+      searchParams.sort_field,
+      searchParams.sort_order
     );
   }, [pagination, fetchProducts, searchParams]);
-
-  // 获取品牌列表 - 仅用于显示，不再用于筛选
-  const fetchBrands = async () => {
-    try {
-      const response = await request({
-        url: '/api/pallet/brands',
-        method: 'GET',
-        params: {
-          status: 'ACTIVE'
-        }
-      });
-      
-      console.log('品牌列表API响应:', response);
-      
-      if (response && response.data && response.data.list && Array.isArray(response.data.list)) {
-        console.log('成功获取品牌列表, 数量:', response.data.list.length);
-        setBrands(response.data.list);
-        return response.data.list; // 返回品牌数据，方便后续使用
-      } else {
-        console.error('获取品牌列表格式错误或为空');
-        message.error('获取品牌列表失败');
-        return [];
-      }
-    } catch (error) {
-      console.error('获取品牌列表失败:', error);
-      message.error('获取品牌列表失败');
-      return [];
-    }
-  };
-
-  // 优化原生select元素的样式，提升用户体验
-  const selectStyle = {
-    width: '100%', 
-    height: '32px',
-    padding: '4px 11px',
-    borderRadius: '6px',
-    border: '1px solid #d9d9d9',
-    fontSize: '14px',
-    boxSizing: 'border-box',
-    outline: 'none',
-    backgroundColor: '#fff',
-    color: 'rgba(0, 0, 0, 0.85)',
-    cursor: 'pointer',
-    appearance: 'auto',  // 确保下拉箭头在各浏览器中显示
-    transition: 'all 0.3s'
-  };
 
   // 简化handleSearchInputChange函数，保留核心功能
   const handleSearchInputChange = useCallback((e) => {
@@ -696,10 +785,10 @@ const ProductManagement = () => {
     
     // 空输入时立即执行查询，否则添加防抖
     if (!value || value.trim() === '') {
-      fetchProducts(1, pagination.pageSize, '', searchParams.brand_id);
+      fetchProducts(1, pagination.pageSize, '', searchParams.brand_id, 'updated_at', 'desc');
     } else {
       searchTimerRef.current = setTimeout(() => {
-        fetchProducts(1, pagination.pageSize, value, searchParams.brand_id);
+        fetchProducts(1, pagination.pageSize, value, searchParams.brand_id, 'updated_at', 'desc');
       }, 300);
     }
   }, [fetchProducts, pagination.pageSize, searchParams.brand_id]);
@@ -721,25 +810,28 @@ const ProductManagement = () => {
       brand_id: brandId
     }));
     
-    // 获取筛选后的数据
-    fetchProducts(1, pagination.pageSize, searchParams.keyword, brandId);
+    // 获取筛选后的数据 - 确保始终使用正确的排序参数，按创建时间降序排序
+    fetchProducts(1, pagination.pageSize, searchParams.keyword, brandId, 'updated_at', 'desc');
   }, [brands, fetchProducts, pagination.pageSize, searchParams.keyword]);
 
-  // 强制刷新产品列表，使用useCallback优化
+  // 常规刷新产品列表，使用useCallback优化
   const handleRefreshList = useCallback(() => {
+    // 设置正确的排序参数 - 使用updated_at降序
+    const sortField = 'updated_at';
+    const sortOrder = 'desc';
+    
     // 重置搜索参数为初始值
     setSearchParams({
       keyword: '',
       brand_id: null,
-      sort_field: 'updated_at',
-      sort_order: 'desc'
+      sort_field: sortField,
+      sort_order: sortOrder
     });
     
     // 重置分页设置，统一使用10条每页
-    const pageSize = 10;
     setPagination({
       current: 1,
-      pageSize: pageSize,
+      pageSize: 10,
       total: 0,
       totalPages: 0
     });
@@ -747,18 +839,24 @@ const ProductManagement = () => {
     // 重置搜索状态
     setIsSearching(false);
     
-    // 重新获取数据
+    // 手动刷新暂时不考虑防止多次加载的限制
     const refreshData = async () => {
-      await fetchBrands();
-      await fetchProducts(1, pageSize, '', null);
+      try {
+        // 先获取品牌列表
+        await fetchBrands();
+        // 确保使用正确的排序参数
+        await fetchProducts(1, 10, '', null, sortField, sortOrder);
+        message.success('页面已刷新');
+      } catch (error) {
+        console.error('刷新数据失败:', error);
+        message.error('刷新数据失败，请重试');
+      }
     };
     
     refreshData();
-    
-    message.success('页面已刷新');
-  }, [fetchProducts, isAdmin]);
+  }, [fetchProducts, fetchBrands, message, setPagination, setSearchParams, setIsSearching]);
 
-  // 内存清理函数
+  // 内存清理函数 - 放在引用前定义，避免警告
   useEffect(() => {
     return () => {
       // 清理搜索定时器
@@ -767,6 +865,40 @@ const ProductManagement = () => {
       }
     };
   }, []);
+
+  // 在组件内部的最前面添加这段代码，用于禁用表格组件的内部排序
+  useEffect(() => {
+    // 禁用表格的默认排序功能，确保始终使用API返回的顺序
+    const disableTableSorting = () => {
+      // 等待表格DOM元素加载完成
+      const timerId = setTimeout(() => {
+        try {
+          // 找到所有表头元素并移除排序相关的事件监听器
+          const tableHeaders = document.querySelectorAll('.ant-table-column-sorter');
+          if (tableHeaders && tableHeaders.length > 0) {
+            console.log('[排序] 已找到表格排序元素，正在禁用内部排序机制');
+            tableHeaders.forEach(header => {
+              // 设置样式使其不可点击
+              if (header.parentNode) {
+                header.parentNode.style.pointerEvents = 'none';
+              }
+            });
+          }
+        } catch (error) {
+          console.error('[排序] 禁用表格排序失败:', error);
+        }
+      }, 500);
+
+      // 返回清理函数，清除计时器避免组件卸载后执行
+      return () => clearTimeout(timerId);
+    };
+
+    // 在组件挂载和数据更新后执行
+    const cleanup = disableTableSorting();
+    
+    // 返回嵌套的清理函数
+    return cleanup;
+  }, [products]);
 
   // 如果未认证，返回null（让路由系统处理重定向）
   if (!isAuthenticated) {
@@ -928,13 +1060,23 @@ const ProductManagement = () => {
         footer={null}
         centered
       >
-        <p>此操作将永久删除该产品，不可恢复！</p>
+        <p>放入回收站可恢复，永久删除不可恢复！</p>
         <div style={{ marginTop: 24, textAlign: 'right' }}>
           <Button onClick={handleCancelDelete}>
             取消
           </Button>
+          <Button 
+            type="primary" 
+            style={{ marginLeft: 8, backgroundColor: '#52c41a', borderColor: '#52c41a' }}
+            onClick={() => {
+              handleMoveToRecycleBin(currentDeleteId);
+              setDeleteModalVisible(false);
+            }}
+          >
+            放入回收站
+          </Button>
           <Button danger onClick={confirmDelete} style={{ marginLeft: 8 }}>
-            确认删除
+            永久删除
           </Button>
         </div>
       </Modal>

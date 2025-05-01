@@ -77,6 +77,29 @@ const ProductCard = ({
     );
   };
 
+  // 渲染价格档位
+  const renderPriceTiers = () => {
+    if (!product.price_tiers || !Array.isArray(product.price_tiers) || product.price_tiers.length === 0) {
+      return <div className="product-card-price-empty">暂无价格档位</div>;
+    }
+
+    return (
+      <div className="product-card-price-tiers">
+        <div className="product-card-price-title">产品订购价格</div>
+        <div className="product-card-price-header">
+          <span className="price-tier-qty-header">订购数量</span>
+          <span className="price-tier-price-header">单价</span>
+        </div>
+        {product.price_tiers.map((tier, index) => (
+          <div key={tier.id || index} className="product-card-price-row">
+            <span className="price-tier-qty">{`≤${tier.quantity}`}</span>
+            <span className="price-tier-price">{tier.price}</span>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   return (
     <div className="product-card">
       <div className="product-card-header">
@@ -167,9 +190,7 @@ const ProductCard = ({
           )}
         </div>
         
-        <div className="product-card-price">
-          {getLowestPrice()}
-        </div>
+        {renderPriceTiers()}
       </div>
       
       <div className="product-card-footer">

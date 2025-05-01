@@ -144,6 +144,77 @@
   text-align: center;
 }
 
+/* 价格档位样式 */
+.product-card-price-tiers {
+  margin-top: auto;
+  margin-bottom: 10px;
+  border: 1px solid #f0f0f0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.product-card-price-title {
+  font-size: 14px;
+  font-weight: 500;
+  text-align: center;
+  padding: 6px;
+  background-color: #f5f7fa;
+  border-bottom: 1px solid #f0f0f0;
+  color: #333;
+}
+
+.product-card-price-header {
+  display: flex;
+  background-color: #f5f7fa;
+  font-size: 12px;
+  color: #666;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.price-tier-qty-header, .price-tier-price-header {
+  flex: 1;
+  padding: 6px 10px;
+  text-align: center;
+}
+
+.price-tier-qty-header {
+  border-right: 1px solid #f0f0f0;
+}
+
+.product-card-price-row {
+  display: flex;
+  font-size: 13px;
+  color: #333;
+}
+
+.product-card-price-row:not(:last-child) {
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.price-tier-qty, .price-tier-price {
+  flex: 1;
+  padding: 6px 10px;
+  text-align: center;
+}
+
+.price-tier-qty {
+  border-right: 1px solid #f0f0f0;
+}
+
+.price-tier-price {
+  color: #ff4d4f;
+  font-weight: 500;
+}
+
+.product-card-price-empty {
+  text-align: center;
+  color: #999;
+  font-size: 13px;
+  padding: 10px;
+  margin-top: auto;
+  margin-bottom: 10px;
+}
+
 .product-card-footer {
   display: flex;
   justify-content: space-between;
