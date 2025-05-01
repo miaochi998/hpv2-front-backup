@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Button, Input, Select, Typography, App, Modal, Spin } from 'antd';
-import { PlusOutlined, ShareAltOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons';
+import { Button, Input, Select, Typography, App, Modal, Spin, Radio } from 'antd';
+import { PlusOutlined, ShareAltOutlined, ReloadOutlined, SearchOutlined, BarsOutlined, AppstoreOutlined } from '@ant-design/icons';
 import { useSelector } from 'react-redux';
 import request from '@/utils/request';
 import ProductGrid from '@/components/business/ProductGrid';
@@ -201,6 +201,8 @@ const ProductManagement = () => {
     total: 0,
     totalPages: 0
   });
+  // 添加视图模式状态
+  const [viewMode, setViewMode] = useState('table'); // 'table' 或 'card'
   
   // 搜索参数 - 注意排序字段只能是backend支持的字段
   const [searchParams, setSearchParams] = useState({
@@ -900,6 +902,13 @@ const ProductManagement = () => {
     return cleanup;
   }, [products]);
 
+  // 处理视图模式切换
+  const handleViewModeChange = (e) => {
+    setViewMode(e.target.value);
+    // 视图切换时不主动请求数据，只更新视图模式
+    console.log('[排序调试] 仅切换视图模式，不改变数据排序');
+  };
+
   // 如果未认证，返回null（让路由系统处理重定向）
   if (!isAuthenticated) {
     return null;
@@ -962,9 +971,18 @@ const ProductManagement = () => {
               icon={<ShareAltOutlined />} 
               className={styles.shareBtn}
               onClick={handleSharePallet}
+              style={{ marginRight: 16 }}
             >
               分享货盘
             </Button>
+            <Radio.Group 
+              value={viewMode} 
+              onChange={handleViewModeChange} 
+              buttonStyle="solid"
+            >
+              <Radio.Button value="table"><BarsOutlined /> 表格视图</Radio.Button>
+              <Radio.Button value="card"><AppstoreOutlined /> 卡片视图</Radio.Button>
+            </Radio.Group>
           </div>
         </div>
       </div>
@@ -980,6 +998,7 @@ const ProductManagement = () => {
           showQuickJumper: true,
           showTotal: (total) => `共 ${total} 条记录`
         }}
+        viewMode={viewMode}
         onTableChange={handleTableChange}
         loading={loading}
         onEdit={handleEdit}

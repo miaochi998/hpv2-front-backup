@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Pagination, Spin, Empty, Image, Tooltip, Button, App, Radio } from 'antd';
 import { EyeOutlined, EditOutlined, DeleteOutlined, DownloadOutlined, AppstoreOutlined, BarsOutlined } from '@ant-design/icons';
 import ProductCard from './ProductCard';
@@ -18,6 +18,7 @@ import './styles.css';
  * @param {Function} props.onImagePreview - 图片预览回调
  * @param {Function} props.onDownloadMaterial - 下载素材包回调
  * @param {Function} props.onMoveToRecycleBin - 移动到回收站回调
+ * @param {string} props.viewMode - 视图模式，'table' 或 'card'
  */
 const ProductGrid = ({
   products = [],
@@ -28,10 +29,10 @@ const ProductGrid = ({
   onDelete,
   onImagePreview,
   onDownloadMaterial,
-  onMoveToRecycleBin
+  onMoveToRecycleBin,
+  viewMode = 'table'
 }) => {
   const { message } = App.useApp();
-  const [viewMode, setViewMode] = useState('table'); // 'table' 或 'card'
   
   // 默认分页配置
   const defaultPagination = {
@@ -148,14 +149,6 @@ const ProductGrid = ({
         </div>
       </div>
     );
-  };
-
-  // 处理视图模式切换，确保不影响产品顺序
-  const handleViewModeChange = (e) => {
-    setViewMode(e.target.value);
-    
-    // 视图切换时不主动请求数据，只更新视图模式
-    console.log('[排序调试] 仅切换视图模式，不改变数据排序');
   };
 
   // 渲染表格视图
@@ -306,15 +299,6 @@ const ProductGrid = ({
 
   return (
     <div className="product-grid-container">
-      <div className="product-grid-toolbar">
-        <div className="product-grid-view-toggle">
-          <Radio.Group value={viewMode} onChange={handleViewModeChange} buttonStyle="solid">
-            <Radio.Button value="table"><BarsOutlined /> 表格视图</Radio.Button>
-            <Radio.Button value="card"><AppstoreOutlined /> 卡片视图</Radio.Button>
-          </Radio.Group>
-        </div>
-      </div>
-
       <Spin spinning={loading} tip="正在加载...">
         {viewMode === 'table' ? renderTableView() : renderCardView()}
       </Spin>
