@@ -15,6 +15,7 @@ import Profile from '@/pages/user/Profile';
 import Unauthorized from '@/pages/Unauthorized';
 import AuthGuard from '@/components/auth/AuthGuard';
 import { useAuthStore } from '@/stores/authStore';
+import RecycleBin from '@/pages/pallet/RecycleBin';
 
 const AppRoutes = () => {
   const { isLoggedIn, userInfo } = useAuthStore();
@@ -56,6 +57,9 @@ const AppRoutes = () => {
                   element={isAdmin ? <CategoryManagement /> : <Navigate to="/unauthorized" />} 
                 />
               </Route>
+              
+              {/* 回收站路由 */}
+              <Route path="protected/recyclebin" element={<RecycleBin />} />
               
               {/* 销售部分 */}
               <Route path="protected/sales">

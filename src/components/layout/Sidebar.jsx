@@ -9,7 +9,7 @@ import {
   TagOutlined, 
   LogoutOutlined,
   WindowsOutlined,
-  EnvironmentOutlined,
+  DeleteOutlined,
   SettingOutlined,
   LeftOutlined,
   RightOutlined
@@ -133,7 +133,7 @@ const Sidebar = () => {
     const commonMenuItems = [
       {
         key: '/protected/recyclebin',
-        icon: <EnvironmentOutlined />,
+        icon: <DeleteOutlined />,
         label: '货盘回收站'
       }
     ];

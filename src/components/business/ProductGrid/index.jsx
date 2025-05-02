@@ -156,113 +156,114 @@ const ProductGrid = ({
     return (
       <>
         <div className="product-grid-scroll-container">
-          {/* 表头 */}
-          <div className="product-grid-header">
-            <div className="grid-col grid-col-index">序号</div>
-            <div className="grid-col grid-col-image">图片</div>
-            <div className="grid-col grid-col-name">名称</div>
-            <div className="grid-col grid-col-brand">品牌</div>
-            <div className="grid-col grid-col-code">货号</div>
-            <div className="grid-col grid-col-spec">规格</div>
-            <div className="grid-col grid-col-content">净含量</div>
-            <div className="grid-col grid-col-size">产品尺寸</div>
-            <div className="grid-col grid-col-shipping">装箱方式</div>
-            <div className="grid-col grid-col-ship-spec">装箱规格</div>
-            <div className="grid-col grid-col-ship-size">装箱尺寸</div>
-            <div className="grid-col grid-col-price-tier">价格档位</div>
-            <div className="grid-col grid-col-material">素材包</div>
-            <div className="grid-col grid-col-url">产品链接</div>
-            <div className="grid-col grid-col-edit">编辑</div>
-            <div className="grid-col grid-col-recycle">放入回收站</div>
-            <div className="grid-col grid-col-delete">删除</div>
-          </div>
+          {/* 添加内容容器，确保它与内容一样宽 */}
+          <div className="product-grid-content">
+            {/* 表头 */}
+            <div className="product-grid-header">
+              <div className="grid-col grid-col-index">序号</div>
+              <div className="grid-col grid-col-image">图片</div>
+              <div className="grid-col grid-col-name">名称</div>
+              <div className="grid-col grid-col-brand">品牌</div>
+              <div className="grid-col grid-col-code">货号</div>
+              <div className="grid-col grid-col-spec">规格</div>
+              <div className="grid-col grid-col-content">净含量</div>
+              <div className="grid-col grid-col-size">产品尺寸</div>
+              <div className="grid-col grid-col-shipping">装箱方式</div>
+              <div className="grid-col grid-col-ship-spec">装箱规格</div>
+              <div className="grid-col grid-col-ship-size">装箱尺寸</div>
+              <div className="grid-col grid-col-price-tier">价格档位</div>
+              <div className="grid-col grid-col-material">素材包</div>
+              <div className="grid-col grid-col-url">产品链接</div>
+              <div className="grid-col grid-col-edit">编辑</div>
+              <div className="grid-col grid-col-recycle">放入回收站</div>
+              <div className="grid-col grid-col-delete">删除</div>
+            </div>
 
-          {/* 数据行 */}
-          <div className="product-grid-body">
-            {products.map((product) => (
-              <div key={product.id} className="product-grid-row">
-                <div className="grid-col grid-col-index">{product.index}</div>
-                <div className="grid-col grid-col-image">
-                  {renderProductImage(product)}
-                </div>
-                <div className="grid-col grid-col-name" title={product.name}>
-                  {product.name}
-                </div>
-                <div className="grid-col grid-col-brand">
-                  {product.brand_name || '-'}
-                </div>
-                <div className="grid-col grid-col-code">
-                  {product.product_code || '-'}
-                </div>
-                <div className="grid-col grid-col-spec" title={product.specification}>
-                  {product.specification || '-'}
-                </div>
-                <div className="grid-col grid-col-content">
-                  {product.net_content || '-'}
-                </div>
-                <div className="grid-col grid-col-size">
-                  {product.product_size || '-'}
-                </div>
-                <div className="grid-col grid-col-shipping">
-                  {product.shipping_method || '-'}
-                </div>
-                <div className="grid-col grid-col-ship-spec">
-                  {product.shipping_spec || '-'}
-                </div>
-                <div className="grid-col grid-col-ship-size">
-                  {product.shipping_size || '-'}
-                </div>
-                <div className="grid-col grid-col-price-tier">
-                  {renderPriceTiers(product.price_tiers)}
-                </div>
-                <div className="grid-col grid-col-material">
-                  {/* 检查是否有素材包 - 查找类型为MATERIAL的附件 */}
-                  {product.attachments?.find(attachment => attachment.file_type === 'MATERIAL') ? (
+            {/* 数据行 */}
+            <div className="product-grid-body">
+              {products.map((product) => (
+                <div key={product.id} className="product-grid-row">
+                  <div className="grid-col grid-col-index">{product.index}</div>
+                  <div className="grid-col grid-col-image">
+                    {renderProductImage(product)}
+                  </div>
+                  <div className="grid-col grid-col-name" title={product.name}>
+                    {product.name}
+                  </div>
+                  <div className="grid-col grid-col-brand">
+                    {product.brand_name || '-'}
+                  </div>
+                  <div className="grid-col grid-col-code">
+                    {product.product_code || '-'}
+                  </div>
+                  <div className="grid-col grid-col-spec" title={product.specification}>
+                    {product.specification || '-'}
+                  </div>
+                  <div className="grid-col grid-col-content">
+                    {product.net_content || '-'}
+                  </div>
+                  <div className="grid-col grid-col-size">
+                    {product.product_size || '-'}
+                  </div>
+                  <div className="grid-col grid-col-shipping">
+                    {product.package_method || '-'}
+                  </div>
+                  <div className="grid-col grid-col-ship-spec">
+                    {product.packaging_spec || '-'}
+                  </div>
+                  <div className="grid-col grid-col-ship-size">
+                    {product.package_size || '-'}
+                  </div>
+                  <div className="grid-col grid-col-price-tier">
+                    {renderPriceTiers(product.price_tiers)}
+                  </div>
+                  <div className="grid-col grid-col-material">
+                    {product.attachments?.some(att => att.file_type === 'MATERIAL') ? (
+                      <Button 
+                        type="link" 
+                        icon={<DownloadOutlined />} 
+                        onClick={() => onDownloadMaterial(product)}
+                      />
+                    ) : (
+                      <span className="no-material">暂无</span>
+                    )}
+                  </div>
+                  <div className="grid-col grid-col-url">
+                    {product.product_url ? (
+                      <Button 
+                        type="link" 
+                        icon={<EyeOutlined />} 
+                        onClick={() => window.open(product.product_url, '_blank')}
+                      />
+                    ) : (
+                      <span className="no-material">暂无</span>
+                    )}
+                  </div>
+                  <div className="grid-col grid-col-edit">
                     <Button 
                       type="link" 
-                      icon={<DownloadOutlined />} 
-                      onClick={() => onDownloadMaterial(product)}
+                      icon={<EditOutlined />} 
+                      onClick={() => onEdit(product)}
                     />
-                  ) : (
-                    <span className="no-material">暂无</span>
-                  )}
-                </div>
-                <div className="grid-col grid-col-url">
-                  {product.product_url ? (
+                  </div>
+                  <div className="grid-col grid-col-recycle">
                     <Button 
                       type="link" 
-                      icon={<EyeOutlined />} 
-                      onClick={() => window.open(product.product_url, '_blank')}
+                      danger
+                      onClick={() => onMoveToRecycleBin(product.id)}
+                    >放入回收站</Button>
+                  </div>
+                  <div className="grid-col grid-col-delete">
+                    <Button 
+                      type="link" 
+                      danger
+                      icon={<DeleteOutlined />}
+                      onClick={() => onDelete(product)}
                     />
-                  ) : (
-                    <span className="no-url">暂无</span>
-                  )}
+                  </div>
                 </div>
-                <div className="grid-col grid-col-edit">
-                  <Button 
-                    type="link" 
-                    icon={<EditOutlined />} 
-                    onClick={() => onEdit(product)}
-                  />
-                </div>
-                <div className="grid-col grid-col-recycle">
-                  <Button 
-                    type="link" 
-                    onClick={() => onMoveToRecycleBin(product.id)}
-                  >
-                    放入回收站
-                  </Button>
-                </div>
-                <div className="grid-col grid-col-delete">
-                  <Button 
-                    type="link" 
-                    danger 
-                    icon={<DeleteOutlined />} 
-                    onClick={() => onDelete(product.id)}
-                  />
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       </>

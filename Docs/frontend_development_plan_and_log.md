@@ -733,3 +733,7 @@ npm run pm2:logs
 3. **本地测试账户**
    - 管理员：admin / 654321
    - 测试销售员账户：seller1 / 123456 
+
+## 技术文档
+- [跨域图片加载解决方案](./cross_domain_image_loading_solution.md)
+- [表格组件水平滚动与背景边框问题解决方案](./UI/frontend/development/table_horizontal_scroll_fix_guide.md) - 解决表格在水平滚动时背景色和边框线不完整的问题 
