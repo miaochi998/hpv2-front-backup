@@ -9,17 +9,153 @@ import {
   FileOutlined, LinkOutlined, ReloadOutlined
 } from '@ant-design/icons';
 import { useSelector } from 'react-redux';
+import request from '@/utils/request';
 import styles from './RecycleBin.module.css';
 import { 
   getRecycleBinItems, restoreProduct, deleteProduct,
   batchRestoreProducts, batchDeleteProducts 
 } from '@/api/recycleBin';
+import { commonSearch } from '@/api/common';
 import { getImageUrl } from '@/config/urls';
 import { formatDateTime } from '@/utils/formatDateTime';
 import './RecycleBinStyles.css';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
+
+// 创建独立于组件的数据获取函数
+const createRecycleBinFetcher = (setLoading, setIsSearching, setRecycleBinItems, setPagination, message) => {
+  return async (page, pageSize, keyword, brandId, sortField, sortOrder) => {
+    setLoading(true);
+    
+    // 使用deleted_at降序排序作为默认值
+    const actualSortField = sortField || 'deleted_at';
+    const actualSortOrder = sortOrder || 'desc';
+    
+    console.log('[回收站] API请求参数:', {
+      page, pageSize, keyword, brandId, 
+      requestedSortField: sortField,
+      requestedSortOrder: sortOrder,
+      actualSortField,
+      actualSortOrder
+    });
+    
+    try {
+      // 判断是否为搜索模式
+      const isSearchMode = keyword && keyword.trim() !== '';
+      setIsSearching(isSearchMode);
+
+      // 构建通用的查询参数
+      const commonParams = {
+        sort_field: actualSortField,
+        sort_order: actualSortOrder
+      };
+
+      // 添加品牌筛选（如果有）
+      if (brandId !== undefined && brandId !== null && !isNaN(brandId)) {
+        commonParams.brand_id = brandId;
+      }
+
+      let response;
+      
+      if (isSearchMode) {
+        // 搜索模式 - 使用通用搜索API
+        const fields = 'p.name,b.name,p.product_code,p.specification,p.net_content';
+        response = await commonSearch('recycle', keyword, fields, false, commonParams);
+      } else {
+        // 分页模式 - 使用回收站分页API
+        response = await getRecycleBinItems({
+          page,
+          page_size: pageSize,
+          ...commonParams
+        });
+      }
+
+      console.log('[回收站API响应]', {
+        status: response?.code,
+        data: response?.data,
+        isSearchMode
+      });
+      
+      // 统一处理响应
+      if (response && response.code === 200 && response.data) {
+        let itemsList = [];
+        let total = 0;
+        let totalPages = 1;
+        let currentPage = page;
+        
+        if (isSearchMode) {
+          // 处理搜索响应
+          itemsList = response.data.list || [];
+          total = itemsList.length;
+          
+          // 前端分页 - 计算当前页应该显示的数据
+          const startIndex = (page - 1) * pageSize;
+          const endIndex = Math.min(startIndex + pageSize, total);
+          
+          // 对全部结果进行分页
+          if (startIndex < itemsList.length) {
+            itemsList = itemsList.slice(startIndex, endIndex);
+          } else {
+            itemsList = [];
+          }
+          
+          currentPage = page;
+          totalPages = Math.ceil(total / pageSize);
+        } else {
+          // 处理分页响应
+          itemsList = response.data.list || [];
+          total = response.data.pagination?.total || 0;
+          currentPage = response.data.pagination?.current_page || 1;
+          totalPages = Math.ceil(total / (response.data.pagination?.per_page || pageSize));
+        }
+        
+        // 添加序号
+        const startIndex = (currentPage - 1) * pageSize;
+        const itemsWithIndex = itemsList.map((item, index) => ({
+          ...item,
+          index: startIndex + index + 1,
+          // 确保键的唯一性
+          key: `item_${item.id}_${Date.now()}_${index}`
+        }));
+        
+        // 更新状态
+        setRecycleBinItems(itemsWithIndex);
+        setPagination({
+          current: currentPage,
+          pageSize: pageSize,
+          total: total,
+          totalPages: totalPages
+        });
+      } else {
+        // 错误处理
+        setRecycleBinItems([]);
+        setPagination(prev => ({
+          ...prev,
+          current: 1,
+          total: 0,
+          totalPages: 0
+        }));
+        
+        if (response?.message) {
+          message.error(response.message);
+        }
+      }
+    } catch (error) {
+      console.error('获取回收站列表失败:', error);
+      setRecycleBinItems([]);
+      setPagination(prev => ({
+        ...prev,
+        current: 1,
+        total: 0,
+        totalPages: 0
+      }));
+      message.error('获取回收站列表失败');
+    } finally {
+      setLoading(false);
+    }
+  };
+};
 
 const RecycleBin = () => {
   const { user } = useSelector((state) => state.auth);
@@ -28,11 +164,20 @@ const RecycleBin = () => {
   
   // 搜索防抖定时器引用
   const searchTimerRef = useRef(null);
+  // 搜索框引用，用于重置值
+  const searchInputRef = useRef(null);
+  // 品牌筛选下拉框引用
+  const brandSelectRef = useRef(null);
+  // 回收站数据获取函数引用
+  const fetchRecycleBinRef = useRef(null);
+  // 初始化状态追踪
+  const initializedRef = useRef(false);
   
   // 状态管理
   const [recycleBinItems, setRecycleBinItems] = useState([]);
   const [brands, setBrands] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 10,
@@ -54,8 +199,25 @@ const RecycleBin = () => {
   // 添加滚动容器引用
   const scrollContainerRef = useRef(null);
   
-  // 获取回收站数据
-  const fetchRecycleBinData = useCallback(async (
+  // 在useEffect中创建fetchRecycleBinData函数
+  useEffect(() => {
+    console.log('[回收站] 创建fetchRecycleBinData函数');
+    fetchRecycleBinRef.current = createRecycleBinFetcher(
+      setLoading,
+      setIsSearching,
+      setRecycleBinItems,
+      setPagination,
+      message
+    );
+    
+    // 组件卸载时清理
+    return () => {
+      fetchRecycleBinRef.current = null;
+    };
+  }, [message]);
+  
+  // 包装函数，确保在fetchRecycleBinRef.current已赋值后调用
+  const fetchRecycleBinData = useCallback((
     page = pagination.current,
     pageSize = pagination.pageSize,
     keyword = searchParams.keyword,
@@ -63,69 +225,22 @@ const RecycleBin = () => {
     sortField = searchParams.sort_field,
     sortOrder = searchParams.sort_order
   ) => {
-    setLoading(true);
+    console.log('[回收站] 执行fetchRecycleBinData:', { page, pageSize, keyword, brandId, sortField, sortOrder });
     
-    try {
-      // 构建查询参数
-      const params = {
+    if (fetchRecycleBinRef.current) {
+      return fetchRecycleBinRef.current(
         page,
-        page_size: pageSize,
-        sort_field: sortField,
-        sort_order: sortOrder
-      };
-      
-      // 添加搜索关键词（如果有）
-      if (keyword && keyword.trim() !== '') {
-        params.search = keyword.trim();
-      }
-      
-      // 添加品牌筛选（如果有）
-      if (brandId !== undefined && brandId !== null) {
-        params.brand_id = brandId;
-      }
-      
-      // 发起API请求
-      const response = await getRecycleBinItems(params);
-      
-      if (response && response.code === 200 && response.data) {
-        // 添加序号
-        const items = response.data.list || [];
-        const startIndex = (page - 1) * pageSize;
-        const itemsWithIndex = items.map((item, index) => ({
-          ...item,
-          index: startIndex + index + 1
-        }));
-        
-        // 更新回收站数据和分页信息
-        setRecycleBinItems(itemsWithIndex);
-        setPagination({
-          current: response.data.pagination.current_page,
-          pageSize: response.data.pagination.per_page,
-          total: response.data.pagination.total,
-          totalPages: Math.ceil(response.data.pagination.total / response.data.pagination.per_page)
-        });
-      } else {
-        // 处理错误响应
-        setRecycleBinItems([]);
-        setPagination(prev => ({
-          ...prev,
-          current: 1,
-          total: 0,
-          totalPages: 0
-        }));
-        
-        if (response?.message) {
-          message.error(response.message);
-        }
-      }
-    } catch (error) {
-      console.error('获取回收站列表失败:', error);
-      setRecycleBinItems([]);
-      message.error('获取回收站列表失败');
-    } finally {
-      setLoading(false);
+        pageSize,
+        keyword,
+        brandId,
+        sortField,
+        sortOrder
+      );
+    } else {
+      console.error('fetchRecycleBinRef.current 未初始化');
+      return Promise.resolve();
     }
-  }, [pagination.current, pagination.pageSize, searchParams, message]);
+  }, [pagination.current, pagination.pageSize, searchParams]);
   
   // 获取品牌列表
   const fetchBrands = useCallback(async () => {
@@ -141,11 +256,70 @@ const RecycleBin = () => {
     }
   }, []);
   
-  // 页面加载时获取数据
+  // 初始化加载数据
   useEffect(() => {
-    fetchRecycleBinData();
-    fetchBrands();
-  }, [fetchRecycleBinData, fetchBrands]);
+    // 如果fetchRecycleBinRef未初始化，直接返回
+    if (!fetchRecycleBinRef.current) {
+      console.log('[回收站] 等待fetchRecycleBinRef初始化...');
+      return;
+    }
+    
+    // 仅在组件挂载时加载一次数据
+    if (initializedRef.current) {
+      return;
+    }
+    
+    initializedRef.current = true;
+    
+    // 数据加载函数
+    async function loadInitialData() {
+      try {
+        console.log('[回收站] 开始加载初始数据');
+        
+        // 先获取品牌列表
+        await fetchBrands();
+        
+        // 设置适当的分页大小
+        const pageSize = 10;
+        
+        // 更新分页状态
+        setPagination({
+          current: 1,
+          pageSize: pageSize,
+          total: 0,
+          totalPages: 0
+        });
+        
+        // 使用deleted_at降序排序
+        const initialSortField = 'deleted_at';
+        const initialSortOrder = 'desc';
+        
+        // 重置搜索参数
+        setSearchParams({
+          keyword: '',
+          brand_id: undefined,
+          sort_field: initialSortField,
+          sort_order: initialSortOrder
+        });
+        
+        // 记录关键日志
+        console.log('[回收站] 初始化加载数据，即将调用 fetchRecycleBinData:', {
+          page: 1,
+          pageSize,
+          sort_field: initialSortField,
+          sort_order: initialSortOrder
+        });
+        
+        // 获取回收站列表，使用正确的排序参数
+        await fetchRecycleBinData(1, pageSize, '', undefined, initialSortField, initialSortOrder);
+      } catch (error) {
+        console.error('[回收站] 初始化加载数据失败:', error);
+        message.error('数据加载失败，请刷新页面重试');
+      }
+    }
+    
+    loadInitialData();
+  }, [fetchBrands, fetchRecycleBinData, message, setPagination, setSearchParams]);
   
   // 处理搜索输入
   const handleSearchInput = (e) => {
@@ -164,6 +338,7 @@ const RecycleBin = () => {
     
     // 设置防抖定时器
     searchTimerRef.current = setTimeout(() => {
+      // 重置到第一页进行搜索
       fetchRecycleBinData(1, pagination.pageSize, value, searchParams.brand_id);
     }, 500);
   };
@@ -184,15 +359,61 @@ const RecycleBin = () => {
   };
   
   // 处理刷新数据
-  const handleRefresh = () => {
-    fetchRecycleBinData();
-  };
+  const handleRefresh = useCallback(() => {
+    // 重置搜索参数为初始值
+    setSearchParams({
+      keyword: '',
+      brand_id: undefined,
+      sort_field: 'deleted_at',
+      sort_order: 'desc'
+    });
+    
+    // 重置分页设置
+    setPagination({
+      current: 1,
+      pageSize: 10,
+      total: 0,
+      totalPages: 0
+    });
+    
+    // 重置搜索状态
+    setIsSearching(false);
+    
+    // 重置选中项
+    setSelectedItems([]);
+    
+    // 重置搜索框值
+    if (searchInputRef.current) {
+      searchInputRef.current.input.value = '';
+    }
+    
+    // 重置品牌筛选下拉框
+    if (brandSelectRef.current) {
+      brandSelectRef.current.value = undefined;
+    }
+    
+    // 执行刷新操作
+    const refreshData = async () => {
+      try {
+        // 先获取品牌列表
+        await fetchBrands();
+        // 然后获取回收站数据
+        await fetchRecycleBinData(1, 10, '', undefined, 'deleted_at', 'desc');
+        message.success('回收站数据已刷新');
+      } catch (error) {
+        console.error('刷新回收站数据失败:', error);
+        message.error('刷新回收站数据失败，请重试');
+      }
+    };
+    
+    refreshData();
+  }, [fetchRecycleBinData, fetchBrands, message, setSearchParams, setPagination, setIsSearching]);
   
   // 处理图片预览
   const handleImagePreview = (imageUrl, title = '产品图片') => {
     if (!imageUrl) return;
     
-    console.log('预览图片:', imageUrl);
+    console.log('[回收站] 预览图片:', imageUrl);
     
     // 设置加载状态
     setPreviewLoading(true);
@@ -204,11 +425,11 @@ const RecycleBin = () => {
     const img = new window.Image();
     img.src = imageUrl;
     img.onload = () => {
-      console.log('图片加载完成');
+      console.log('[回收站] 图片加载完成:', imageUrl);
       setPreviewLoading(false);
     };
     img.onerror = () => {
-      console.error('图片加载失败:', imageUrl);
+      console.error('[回收站] 图片加载失败:', imageUrl);
       setPreviewLoading(false);
       message.error('图片加载失败');
     };
@@ -246,7 +467,7 @@ const RecycleBin = () => {
         
         message.success('素材包下载已开始');
       } catch (error) {
-        console.error('下载素材包失败', error);
+        console.error('[回收站] 下载素材包失败:', error);
         message.error('下载素材包失败：' + (error.message || '未知错误'));
       }
     } else {
@@ -300,7 +521,7 @@ const RecycleBin = () => {
             message.error(response?.message || '产品还原失败');
           }
         } catch (error) {
-          console.error('产品还原失败:', error);
+          console.error('[回收站] 产品还原失败:', error);
           message.error('产品还原失败');
         }
       }
@@ -333,7 +554,7 @@ const RecycleBin = () => {
             message.error(response?.message || '永久删除失败');
           }
         } catch (error) {
-          console.error('永久删除产品失败:', error);
+          console.error('[回收站] 永久删除产品失败:', error);
           message.error('永久删除失败');
         }
       }
@@ -367,7 +588,7 @@ const RecycleBin = () => {
             message.error(response?.message || '批量还原失败');
           }
         } catch (error) {
-          console.error('批量还原产品失败:', error);
+          console.error('[回收站] 批量还原产品失败:', error);
           message.error('批量还原失败');
         }
       }
@@ -405,7 +626,7 @@ const RecycleBin = () => {
             message.error(response?.message || '批量删除失败');
           }
         } catch (error) {
-          console.error('批量删除产品失败:', error);
+          console.error('[回收站] 批量删除产品失败:', error);
           message.error('批量删除失败');
         }
       }
@@ -505,12 +726,13 @@ const RecycleBin = () => {
       {/* 搜索和筛选栏 */}
       <div className={styles.searchFilterBar}>
         <Input
-          placeholder="搜索产品名称或货号"
+          placeholder="搜索产品名称、品牌、货号、规格、净含量..."
           allowClear
           prefix={<SearchOutlined />}
           value={searchParams.keyword}
           onChange={handleSearchInput}
           className={styles.searchInput}
+          ref={searchInputRef}
         />
         
         <Select
@@ -519,6 +741,7 @@ const RecycleBin = () => {
           value={searchParams.brand_id}
           onChange={handleBrandFilter}
           className={styles.brandSelect}
+          ref={brandSelectRef}
         >
           {brands.map(brand => (
             <Option key={brand.id} value={brand.id}>
@@ -527,11 +750,13 @@ const RecycleBin = () => {
           ))}
         </Select>
         
-        <div style={{ marginLeft: 'auto' }}>
-          <Text type="secondary">
-            共 {pagination.total} 个产品在回收站
-          </Text>
-        </div>
+        <Button 
+          icon={<ReloadOutlined />} 
+          onClick={handleRefresh}
+          style={{ marginLeft: 8 }}
+        >
+          刷新
+        </Button>
       </div>
       
       {/* 批量操作栏 */}
@@ -551,7 +776,7 @@ const RecycleBin = () => {
               icon={<UndoOutlined />}
               onClick={handleBatchRestore}
               disabled={selectedItems.length === 0}
-              style={{ backgroundColor: '#52c41a', borderColor: '#52c41a', marginLeft: 16 }}
+              style={{ marginLeft: 16 }}
             >
               批量还原
             </Button>
@@ -562,19 +787,20 @@ const RecycleBin = () => {
               icon={<DeleteOutlined />}
               onClick={handleBatchDelete}
               disabled={selectedItems.length === 0}
-              style={{ marginLeft: 12 }}
+              style={{ 
+                marginLeft: 12, 
+                ...(selectedItems.length > 0 
+                  ? { backgroundColor: '#ff7875', borderColor: '#ff7875' } 
+                  : { backgroundColor: '#d9d9d9', borderColor: '#d9d9d9' })
+              }}
             >
               批量删除
             </Button>
           </div>
           
-          <Button 
-            type="primary" 
-            icon={<ReloadOutlined />} 
-            onClick={handleRefresh}
-          >
-            刷新
-          </Button>
+          <Text type="secondary">
+            共 {pagination.total} 个产品在回收站
+          </Text>
         </div>
       )}
       
@@ -618,11 +844,22 @@ const RecycleBin = () => {
                 {/* 数据行 */}
                 <div className="recyclebin-product-grid-body">
                   {recycleBinItems.map((item) => {
-                    const product = item.product;
+                    // 确保product对象存在，如果不存在则提供空对象
+                    const product = item.product || {};
+                    // 确保attachments属性存在且是数组
+                    if (!product.attachments) product.attachments = [];
+                    if (!Array.isArray(product.attachments)) product.attachments = [];
+                    // 确保price_tiers属性存在且是数组
+                    if (!product.price_tiers) product.price_tiers = [];
+                    if (!Array.isArray(product.price_tiers)) product.price_tiers = [];
+                    
                     const hasMaterial = product.attachments?.some(att => att.file_type === 'MATERIAL');
                     
+                    // 使用item上的key字段或生成唯一键
+                    const rowKey = item.key || `item_${item.id}_${Date.now()}_${item.index}`;
+                    
                     return (
-                      <div key={item.id} className="recyclebin-product-grid-row">
+                      <div key={rowKey} className="recyclebin-product-grid-row">
                         <div className="recyclebin-grid-col recyclebin-grid-col-select">
                           <Checkbox 
                             checked={selectedItems.includes(item.id)}
