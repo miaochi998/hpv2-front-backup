@@ -166,12 +166,27 @@ const RecycleBin = () => {
   const searchTimerRef = useRef(null);
   // 搜索框引用，用于重置值
   const searchInputRef = useRef(null);
-  // 品牌筛选下拉框引用
-  const brandSelectRef = useRef(null);
   // 回收站数据获取函数引用
   const fetchRecycleBinRef = useRef(null);
   // 初始化状态追踪
   const initializedRef = useRef(false);
+  
+  // 优化原生select元素的样式，提升用户体验
+  const selectStyle = {
+    width: '100%', 
+    height: '32px',
+    padding: '4px 11px',
+    borderRadius: '6px',
+    border: '1px solid #d9d9d9',
+    fontSize: '14px',
+    boxSizing: 'border-box',
+    outline: 'none',
+    backgroundColor: '#fff',
+    color: 'rgba(0, 0, 0, 0.85)',
+    cursor: 'pointer',
+    appearance: 'auto',  // 确保下拉箭头在各浏览器中显示
+    transition: 'all 0.3s'
+  };
   
   // 状态管理
   const [recycleBinItems, setRecycleBinItems] = useState([]);
@@ -186,7 +201,7 @@ const RecycleBin = () => {
   });
   const [searchParams, setSearchParams] = useState({
     keyword: '',
-    brand_id: undefined,
+    brand_id: null,
     sort_field: 'deleted_at',
     sort_order: 'desc'
   });
@@ -245,11 +260,16 @@ const RecycleBin = () => {
   // 获取品牌列表
   const fetchBrands = useCallback(async () => {
     try {
-      const response = await fetch('/api/pallet/brands/filter');
-      const result = await response.json();
+      const response = await request({
+        url: '/api/pallet/brands',
+        method: 'GET'
+      });
       
-      if (result.code === 200 && Array.isArray(result.data)) {
-        setBrands(result.data);
+      if (response && response.code === 200 && response.data?.list && Array.isArray(response.data.list)) {
+        console.log('[回收站] 成功获取品牌列表, 数量:', response.data.list.length);
+        setBrands(response.data.list);
+      } else {
+        console.error('[回收站] 获取品牌列表格式错误或为空');
       }
     } catch (error) {
       console.error('获取品牌列表失败:', error);
@@ -297,7 +317,7 @@ const RecycleBin = () => {
         // 重置搜索参数
         setSearchParams({
           keyword: '',
-          brand_id: undefined,
+          brand_id: null,
           sort_field: initialSortField,
           sort_order: initialSortOrder
         });
@@ -311,7 +331,7 @@ const RecycleBin = () => {
         });
         
         // 获取回收站列表，使用正确的排序参数
-        await fetchRecycleBinData(1, pageSize, '', undefined, initialSortField, initialSortOrder);
+        await fetchRecycleBinData(1, pageSize, '', null, initialSortField, initialSortOrder);
       } catch (error) {
         console.error('[回收站] 初始化加载数据失败:', error);
         message.error('数据加载失败，请刷新页面重试');
@@ -344,13 +364,24 @@ const RecycleBin = () => {
   };
   
   // 处理品牌筛选
-  const handleBrandFilter = (value) => {
+  const handleBrandFilter = (event) => {
+    // 使用event.target.value获取选中值
+    const selectedValue = event.target.value;
+    
+    // 设置brand_id，如果是'all'则为null，否则转为数字
+    let brandId = null;
+    if (selectedValue !== 'all') {
+      brandId = parseInt(selectedValue, 10);
+    }
+    
+    // 更新搜索参数
     setSearchParams(prev => ({
       ...prev,
-      brand_id: value
+      brand_id: brandId
     }));
     
-    fetchRecycleBinData(1, pagination.pageSize, searchParams.keyword, value);
+    // 获取筛选后的数据
+    fetchRecycleBinData(1, pagination.pageSize, searchParams.keyword, brandId);
   };
   
   // 处理分页切换
@@ -363,7 +394,7 @@ const RecycleBin = () => {
     // 重置搜索参数为初始值
     setSearchParams({
       keyword: '',
-      brand_id: undefined,
+      brand_id: null,
       sort_field: 'deleted_at',
       sort_order: 'desc'
     });
@@ -387,18 +418,13 @@ const RecycleBin = () => {
       searchInputRef.current.input.value = '';
     }
     
-    // 重置品牌筛选下拉框
-    if (brandSelectRef.current) {
-      brandSelectRef.current.value = undefined;
-    }
-    
     // 执行刷新操作
     const refreshData = async () => {
       try {
         // 先获取品牌列表
         await fetchBrands();
         // 然后获取回收站数据
-        await fetchRecycleBinData(1, 10, '', undefined, 'deleted_at', 'desc');
+        await fetchRecycleBinData(1, 10, '', null, 'deleted_at', 'desc');
         message.success('回收站数据已刷新');
       } catch (error) {
         console.error('刷新回收站数据失败:', error);
@@ -735,20 +761,20 @@ const RecycleBin = () => {
           ref={searchInputRef}
         />
         
-        <Select
-          placeholder="按品牌筛选"
-          allowClear
-          value={searchParams.brand_id}
-          onChange={handleBrandFilter}
-          className={styles.brandSelect}
-          ref={brandSelectRef}
-        >
-          {brands.map(brand => (
-            <Option key={brand.id} value={brand.id}>
-              {brand.name}
-            </Option>
-          ))}
-        </Select>
+        <div style={{ display: 'inline-block', width: 200, marginRight: 8 }}>
+          <select 
+            style={selectStyle}
+            value={searchParams.brand_id === null ? 'all' : String(searchParams.brand_id)}
+            onChange={handleBrandFilter}
+          >
+            <option value="all">全部品牌</option>
+            {brands.map(brand => (
+              <option key={brand.id} value={String(brand.id)}>
+                {brand.name}
+              </option>
+            ))}
+          </select>
+        </div>
         
         <Button 
           icon={<ReloadOutlined />} 

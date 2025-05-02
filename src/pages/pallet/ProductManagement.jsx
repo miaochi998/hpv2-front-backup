@@ -547,10 +547,19 @@ const ProductManagement = () => {
   // 处理放入回收站
   const handleMoveToRecycleBin = async (productId) => {
     try {
+      // 确保productId是有效的整数
+      if (!productId || isNaN(Number(productId))) {
+        message.error('无效的产品ID');
+        return;
+      }
+      
+      // 转换为数字类型
+      const numericProductId = Number(productId);
+      
       message.loading({ content: '正在移动到回收站...', key: 'recycle' });
       
       const response = await request({
-        url: `/api/pallet/products/${productId}/recycle`,
+        url: `/api/pallet/products/${numericProductId}/recycle`,
         method: 'POST',
         data: {
           confirm: true
@@ -648,8 +657,13 @@ const ProductManagement = () => {
 
   // 处理产品删除
   const handleDelete = useCallback((id) => {
-    setCurrentDeleteId(id);
-    setDeleteModalVisible(true);
+    // 确保id是有效的整数
+    if (id && !isNaN(Number(id))) {
+      setCurrentDeleteId(Number(id));
+      setDeleteModalVisible(true);
+    } else {
+      message.error('无效的产品ID');
+    }
   }, []);
 
   // 处理永久删除确认
@@ -1088,8 +1102,13 @@ const ProductManagement = () => {
             type="primary" 
             style={{ marginLeft: 8, backgroundColor: '#52c41a', borderColor: '#52c41a' }}
             onClick={() => {
-              handleMoveToRecycleBin(currentDeleteId);
-              setDeleteModalVisible(false);
+              // 确保传递整数形式的产品ID
+              if (currentDeleteId && !isNaN(Number(currentDeleteId))) {
+                handleMoveToRecycleBin(Number(currentDeleteId));
+                setDeleteModalVisible(false);
+              } else {
+                message.error('无效的产品ID');
+              }
             }}
           >
             放入回收站

@@ -258,7 +258,7 @@ const ProductGrid = ({
                       type="link" 
                       danger
                       icon={<DeleteOutlined />}
-                      onClick={() => onDelete(product)}
+                      onClick={() => onDelete(product.id)}
                     />
                   </div>
                 </div>
