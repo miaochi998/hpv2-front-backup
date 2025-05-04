@@ -206,13 +206,13 @@ const ProductGrid = ({
                     {product.product_size || '-'}
                   </div>
                   <div className="grid-col grid-col-shipping">
-                    {product.package_method || '-'}
+                    {product.shipping_method || '-'}
                   </div>
                   <div className="grid-col grid-col-ship-spec">
-                    {product.packaging_spec || '-'}
+                    {product.shipping_spec || '-'}
                   </div>
                   <div className="grid-col grid-col-ship-size">
-                    {product.package_size || '-'}
+                    {product.shipping_size || '-'}
                   </div>
                   <div className="grid-col grid-col-price-tier">
                     {renderPriceTiers(product.price_tiers)}
