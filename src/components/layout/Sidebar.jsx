@@ -12,7 +12,8 @@ import {
   DeleteOutlined,
   SettingOutlined,
   LeftOutlined,
-  RightOutlined
+  RightOutlined,
+  ShareAltOutlined
 } from '@ant-design/icons';
 import { logoutAsync } from '../../store/slices/authSlice';
 import { getImageUrl } from '../../config/urls';
@@ -131,6 +132,11 @@ const Sidebar = () => {
     
     // 公共菜单(位于底部)
     const commonMenuItems = [
+      {
+        key: '/protected/share-history',
+        icon: <ShareAltOutlined />,
+        label: '分享历史'
+      },
       {
         key: '/protected/recyclebin',
         icon: <DeleteOutlined />,

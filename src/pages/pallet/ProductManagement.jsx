@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Button, Input, Select, Typography, App, Modal, Spin, Radio } from 'antd';
-import { PlusOutlined, ShareAltOutlined, ReloadOutlined, SearchOutlined, BarsOutlined, AppstoreOutlined } from '@ant-design/icons';
+import { Button, Input, Select, Typography, App, Modal, Spin, Radio, Alert } from 'antd';
+import { PlusOutlined, ShareAltOutlined, ReloadOutlined, SearchOutlined, BarsOutlined, AppstoreOutlined, FilterOutlined, DownloadOutlined } from '@ant-design/icons';
 import { useSelector } from 'react-redux';
 import request from '@/utils/request';
 import ProductGrid from '@/components/business/ProductGrid';
@@ -8,6 +8,7 @@ import styles from './ProductManagement.module.css';
 import { commonSearch } from '@/api/common';
 import { getImageUrl, getApiBaseUrl } from '@/config/urls';
 import ProductForm from '@/components/business/ProductForm';
+import { createShareLink, generateQrCode } from '@/api/pallet';
 
 const { Title } = Typography;
 const { Option } = Select;
@@ -720,9 +721,81 @@ const ProductManagement = () => {
   }, []);
 
   // 处理分享货盘
-  const handleSharePallet = useCallback(() => {
-    message.info('分享货盘功能待实现');
-  }, [message]);
+  const handleSharePallet = useCallback(async () => {
+    console.log('分享货盘按钮被点击');
+    try {
+      // 显示加载状态
+      setLoading(true);
+      message.loading({ content: '正在生成分享链接...', key: 'shareLoading' });
+      
+      console.log('调用 createShareLink API...');
+      // 创建分享链接
+      const shareResponse = await createShareLink();
+      console.log('分享链接创建成功:', shareResponse);
+      const { token, share_url } = shareResponse.data;
+      
+      console.log('调用 generateQrCode API，token:', token);
+      // 生成二维码
+      const qrcodeResponse = await generateQrCode(token);
+      console.log('二维码生成成功:', qrcodeResponse);
+      const { qrcode_url } = qrcodeResponse.data;
+      
+      console.log('准备显示成功对话框');
+      // 显示分享模态框 
+      modal.success({
+        title: '货盘分享成功',
+        icon: <ShareAltOutlined style={{ color: '#1890ff' }} />,
+        content: (
+          <div style={{ marginTop: 16 }}>
+            <div style={{ marginBottom: 16, textAlign: 'center' }}>
+              <img 
+                src={qrcode_url} 
+                alt="二维码" 
+                style={{ width: 200, height: 200, margin: '0 auto' }}
+              />
+              <p style={{ marginTop: 8, color: '#666' }}>扫码查看货盘</p>
+            </div>
+            
+            <Input.Group compact style={{ marginBottom: 16 }}>
+              <Input
+                value={share_url}
+                readOnly
+                style={{ width: 'calc(100% - 70px)' }}
+              />
+              <Button 
+                type="primary"
+                onClick={() => {
+                  // 复制链接到剪贴板
+                  navigator.clipboard.writeText(share_url)
+                    .then(() => message.success('链接已复制到剪贴板'))
+                    .catch(() => message.error('复制失败，请手动复制'));
+                }}
+              >
+                复制
+              </Button>
+            </Input.Group>
+            
+            <Alert
+              type="info"
+              showIcon
+              message="该链接永久有效，可随时分享给客户。客户无需登录即可查看您的最新货盘信息。"
+            />
+          </div>
+        ),
+        width: 500,
+        onOk() {},
+        okText: '关闭'
+      });
+      
+      // 隐藏加载消息
+      message.destroy('shareLoading');
+    } catch (error) {
+      console.error('分享货盘失败:', error);
+      message.error({ content: '分享货盘失败，请稍后重试', key: 'shareLoading' });
+    } finally {
+      setLoading(false);
+    }
+  }, [message, modal]);
 
   // 处理表格分页、排序和筛选变化
   const handleTableChange = useCallback((newPagination, filters, sorter) => {

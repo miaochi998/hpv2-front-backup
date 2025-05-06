@@ -1,0 +1,48 @@
+.shareHistoryContainer {
+  padding: 20px;
+}
+
+.qrcodeLoading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 300px;
+}
+
+.qrcodeContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.qrcodeImageContainer {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.qrcodeImage {
+  width: 200px;
+  height: 200px;
+}
+
+.qrcodeInfo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 16px;
+  width: 100%;
+}
+
+.qrcodeInfo > span {
+  margin-bottom: 4px;
+}
+
+.shareLinkInput {
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+.shareAlert {
+  width: 100%;
+} 

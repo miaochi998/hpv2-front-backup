@@ -18,6 +18,8 @@ const Dashboard = lazy(() => import('@/pages/dashboard/Dashboard'));
 const Unauthorized = lazy(() => import('@/pages/Unauthorized'));
 const ProductManagement = lazy(() => import('@/pages/pallet/ProductManagement'));
 const RecycleBin = lazy(() => import('@/pages/pallet/RecycleBin'));
+const ShareView = lazy(() => import('@/pages/pallet/ShareView'));
+const ShareHistory = lazy(() => import('@/pages/pallet/ShareHistory'));
 
 // 管理员页面
 const BrandManagement = lazy(() => import('@/pages/admin/BrandManagement'));
@@ -31,6 +33,10 @@ const ViewCompanyPallets = lazy(() => import('@/pages/seller/ViewCompanyPallets'
 
 // 创建路由
 const router = createBrowserRouter([
+  {
+    path: '/share/:token',
+    element: lazyLoad(ShareView),
+  },
   {
     path: '/login',
     element: lazyLoad(LoginPage),
@@ -70,6 +76,13 @@ const router = createBrowserRouter([
         path: 'products',
         element: <PrivateRoute 
           element={lazyLoad(ProductManagement)}
+          requiredRoles={[]} // 空数组表示所有角色都可访问
+        />
+      },
+      {
+        path: 'share-history',
+        element: <PrivateRoute 
+          element={lazyLoad(ShareHistory)}
           requiredRoles={[]} // 空数组表示所有角色都可访问
         />
       },
