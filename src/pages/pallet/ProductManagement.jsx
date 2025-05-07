@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Button, Input, Select, Typography, App, Modal, Spin, Radio, Alert } from 'antd';
-import { PlusOutlined, ShareAltOutlined, ReloadOutlined, SearchOutlined, BarsOutlined, AppstoreOutlined, FilterOutlined, DownloadOutlined } from '@ant-design/icons';
+import { PlusOutlined, ShareAltOutlined, ReloadOutlined, SearchOutlined, BarsOutlined, AppstoreOutlined, FilterOutlined, DownloadOutlined, CopyOutlined, LinkOutlined, ExportOutlined } from '@ant-design/icons';
 import { useSelector } from 'react-redux';
 import request from '@/utils/request';
 import ProductGrid from '@/components/business/ProductGrid';
@@ -743,48 +743,129 @@ const ProductManagement = () => {
       console.log('准备显示成功对话框');
       // 显示分享模态框 
       modal.success({
-        title: '货盘分享成功',
+        title: '分享货盘',
         icon: <ShareAltOutlined style={{ color: '#1890ff' }} />,
         content: (
           <div style={{ marginTop: 16 }}>
-            <div style={{ marginBottom: 16, textAlign: 'center' }}>
-              <img 
-                src={qrcode_url} 
-                alt="二维码" 
-                style={{ width: 200, height: 200, margin: '0 auto' }}
-              />
-              <p style={{ marginTop: 8, color: '#666' }}>扫码查看货盘</p>
+            <div style={{ display: 'flex', alignItems: 'center', marginBottom: 16 }}>
+              {/* 分享链接区域 */}
+              <div style={{ 
+                flex: 1, 
+                padding: '15px', 
+                border: '1px solid #e8e8e8', 
+                borderRadius: '5px',
+                marginRight: '15px',
+                height: '150px',
+                display: 'flex',
+                alignItems: 'center',
+                overflow: 'hidden',
+                cursor: 'pointer'
+              }} onClick={() => {
+                // 使用更兼容的方式复制链接
+                const textarea = document.createElement('textarea');
+                textarea.value = share_url;
+                textarea.style.position = 'fixed';  // 防止滚动到页面底部
+                document.body.appendChild(textarea);
+                textarea.focus();
+                textarea.select();
+                try {
+                  const successful = document.execCommand('copy');
+                  if (successful) {
+                    message.success('链接已复制到剪贴板');
+                  } else {
+                    message.error('复制失败，请手动复制');
+                  }
+                } catch (err) {
+                  message.error('复制失败，请手动复制');
+                }
+                document.body.removeChild(textarea);
+              }}>
+                <div style={{ wordBreak: 'break-all' }}>{share_url}</div>
+              </div>
+              
+              {/* 二维码区域 */}
+              <div>
+                <img 
+                  src={qrcode_url} 
+                  alt="二维码" 
+                  style={{ width: 150, height: 150 }}
+                />
+              </div>
             </div>
             
-            <Input.Group compact style={{ marginBottom: 16 }}>
-              <Input
-                value={share_url}
-                readOnly
-                style={{ width: 'calc(100% - 70px)' }}
-              />
+            {/* 提示文字 */}
+            <div style={{ marginBottom: 20 }}>
+              <p style={{ color: '#666', fontSize: '14px' }}>点击链接地址或右键复制二维码图片，然后到微信粘贴给客户即可。</p>
+            </div>
+            
+            {/* 底部按钮 */}
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'center',
+              marginTop: 10,
+              gap: '20px'  // 设置按钮之间的间距为20px
+            }}>
+              <Button key="close" onClick={() => {
+                // 找到并点击对话框中的确定按钮
+                const okBtn = document.querySelector('.ant-modal-confirm-btns .ant-btn-primary');
+                if (okBtn) {
+                  okBtn.click();
+                }
+              }}>
+                关闭
+              </Button>
+              
               <Button 
-                type="primary"
+                key="copy" 
+                icon={<CopyOutlined />}
+                style={{ 
+                  backgroundColor: '#85ce61',
+                  color: 'white',
+                  border: 'none'
+                }}
                 onClick={() => {
-                  // 复制链接到剪贴板
-                  navigator.clipboard.writeText(share_url)
-                    .then(() => message.success('链接已复制到剪贴板'))
-                    .catch(() => message.error('复制失败，请手动复制'));
+                  // 使用更兼容的方式复制链接
+                  const textarea = document.createElement('textarea');
+                  textarea.value = share_url;
+                  textarea.style.position = 'fixed';  // 防止滚动到页面底部
+                  document.body.appendChild(textarea);
+                  textarea.focus();
+                  textarea.select();
+                  try {
+                    const successful = document.execCommand('copy');
+                    if (successful) {
+                      message.success('链接已复制到剪贴板');
+                    } else {
+                      message.error('复制失败，请手动复制');
+                    }
+                  } catch (err) {
+                    message.error('复制失败，请手动复制');
+                  }
+                  document.body.removeChild(textarea);
                 }}
               >
-                复制
+                复制链接
               </Button>
-            </Input.Group>
-            
-            <Alert
-              type="info"
-              showIcon
-              message="该链接永久有效，可随时分享给客户。客户无需登录即可查看您的最新货盘信息。"
-            />
+              
+              <Button 
+                key="view" 
+                type="primary" 
+                icon={<ExportOutlined />}
+                onClick={() => {
+                  window.open(share_url, '_blank');
+                }}
+              >
+                访问货盘
+              </Button>
+            </div>
           </div>
         ),
-        width: 500,
-        onOk() {},
-        okText: '关闭'
+        width: 550,
+        onOk: undefined, // 完全移除确认按钮
+        okButtonProps: { style: { display: 'none' } }, // 隐藏确认按钮
+        okText: '',
+        closable: true, // 启用关闭按钮
+        closeIcon: <span style={{ fontSize: '18px', fontWeight: 'bold' }}>×</span>, // 自定义关闭图标
       });
       
       // 隐藏加载消息

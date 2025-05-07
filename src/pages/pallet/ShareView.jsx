@@ -11,11 +11,12 @@ import {
   DownloadOutlined, UserOutlined, BarsOutlined, EyeOutlined,
   FilterOutlined, SortAscendingOutlined, SortDescendingOutlined,
   HomeOutlined, ShoppingOutlined, FileTextOutlined, 
-  QuestionCircleOutlined, HeartOutlined, MenuFoldOutlined,
-  MenuUnfoldOutlined, StarOutlined, RightOutlined, LinkOutlined
+  QuestionCircleOutlined, HeartOutlined, LeftOutlined, RightOutlined,
+  StarOutlined, LinkOutlined
 } from '@ant-design/icons';
 import { getPalletShareData, getProductImageUrl } from '@/api/pallet';
 import { commonSearch } from '@/api/common';
+import { getStaticContent } from '@/api/staticContent';
 import styles from './ShareView.module.css';
 
 const { Title, Text, Paragraph } = Typography;
@@ -70,6 +71,19 @@ const ShareView = () => {
   // 模态框状态
   const [storeModalVisible, setStoreModalVisible] = useState(false);
   const [helpModalVisible, setHelpModalVisible] = useState(false);
+  const [logisticsModalVisible, setLogisticsModalVisible] = useState(false);
+  
+  // 静态内容状态
+  const [staticContents, setStaticContents] = useState({
+    'store-service': '',
+    'logistics': '',
+    'help-center': ''
+  });
+  const [staticContentLoading, setStaticContentLoading] = useState({
+    'store-service': false,
+    'logistics': false,
+    'help-center': false
+  });
   
   // 从本地存储获取上次的视图模式
   useEffect(() => {
@@ -144,6 +158,24 @@ const ShareView = () => {
     }
   }, [token]);
   
+  // 获取静态内容
+  const fetchStaticContent = useCallback(async (contentType) => {
+    try {
+      setStaticContentLoading(prev => ({ ...prev, [contentType]: true }));
+      const response = await getStaticContent(contentType);
+      if (response && response.data) {
+        setStaticContents(prev => ({ 
+          ...prev, 
+          [contentType]: response.data.content || '' 
+        }));
+      }
+    } catch (err) {
+      console.error(`获取${contentType}内容失败:`, err);
+    } finally {
+      setStaticContentLoading(prev => ({ ...prev, [contentType]: false }));
+    }
+  }, []);
+  
   // 获取数据
   const fetchData = useCallback(async (page = 1, pageSize = 10, searchText = '', brand = null) => {
     setLoading(true);
@@ -197,7 +229,9 @@ const ShareView = () => {
           page,
           pageSize,
           search: '',
-          brandId: brand
+          brandId: brand,
+          sortField: 'updated_at', // 修改为按最后更新时间排序
+          sortOrder: 'desc'
         });
         
         // 提取产品数据
@@ -232,8 +266,12 @@ const ShareView = () => {
       fetchBrands();
       // 然后获取产品数据
       fetchData(pagination.current, pagination.pageSize, search, brandId);
+      // 获取静态内容
+      fetchStaticContent('store-service');
+      fetchStaticContent('logistics');
+      fetchStaticContent('help-center');
     }
-  }, [token, fetchBrands, fetchData]);
+  }, [token, fetchBrands, fetchData, fetchStaticContent]);
   
   // 处理页码变化
   const handlePageChange = (page, pageSize) => {
@@ -331,17 +369,34 @@ const ShareView = () => {
     setHelpModalVisible(false);
   };
   
+  // 打开物流模态框
+  const showLogisticsModal = () => {
+    setLogisticsModalVisible(true);
+  };
+  
+  // 关闭物流模态框
+  const closeLogisticsModal = () => {
+    setLogisticsModalVisible(false);
+  };
+  
   // 添加到收藏夹
   const addToFavorites = () => {
-    if (window.sidebar && window.sidebar.addPanel) { 
-      // Firefox < 23
+    // 现代浏览器使用标准方法
+    if (window.navigator && window.navigator.addToFavorites) {
+      window.navigator.addToFavorites(window.location.href, document.title);
+    } else if (document.all) { // IE
+      try {
+        window.external.addFavorite(window.location.href, document.title);
+      } catch (e) {
+        alert('您的浏览器不支持自动添加收藏夹，请按 Ctrl+D 手动添加');
+      }
+    } else if (window.sidebar && window.sidebar.addPanel) { // Firefox
       window.sidebar.addPanel(document.title, window.location.href, '');
-    } else if (window.external && ('AddFavorite' in window.external)) { 
-      // IE
-      window.external.AddFavorite(window.location.href, document.title);
-    } else { 
-      // 现代浏览器
-      alert('请按 ' + (navigator.userAgent.toLowerCase().indexOf('mac') !== -1 ? 'Command/Cmd' : 'CTRL') + ' + D 将本页添加到收藏夹。');
+    } else { // 现代浏览器一般不支持自动添加收藏夹
+      // 通知用户使用快捷键添加收藏
+      const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+      const shortcutKey = isMac ? '⌘+D' : 'Ctrl+D';
+      alert(`请按 ${shortcutKey} 将本页添加到收藏夹`);
     }
   };
   
@@ -1037,6 +1092,16 @@ const ShareView = () => {
     );
   };
   
+  // 设置页面标题
+  useEffect(() => {
+    document.title = '帮你品牌货盘';
+    
+    // 清理函数 - 组件卸载时恢复原标题
+    return () => {
+      document.title = '帮你品牌货盘管理系统';
+    };
+  }, []);
+  
   // 主渲染
   return (
     <div className={styles.appLayout}>
@@ -1045,10 +1110,6 @@ const ShareView = () => {
         <div className={styles.logo}>
           {!collapsed && <span className={styles.logoText}>帮你品牌</span>}
         </div>
-        
-        <button className={styles.collapseButton} onClick={toggleCollapsed}>
-          {collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-        </button>
         
         <div className={styles.menu}>
           <div className={`${styles.menuItem} ${collapsed ? styles.menuItemNarrow : styles.menuItemWide}`}>
@@ -1061,7 +1122,7 @@ const ShareView = () => {
             {!collapsed && <span className={styles.menuItemText}>对接店管家</span>}
           </div>
           
-          <div className={`${styles.menuItem} ${collapsed ? styles.menuItemNarrow : styles.menuItemWide}`} onClick={showStoreModal}>
+          <div className={`${styles.menuItem} ${collapsed ? styles.menuItemNarrow : styles.menuItemWide}`} onClick={showLogisticsModal}>
             <span className={styles.menuItemIcon}><FileTextOutlined /></span>
             {!collapsed && <span className={styles.menuItemText}>快递物流</span>}
           </div>
@@ -1080,6 +1141,11 @@ const ShareView = () => {
           </div>
         </div>
       </aside>
+      
+      {/* 折叠开关按钮 - 移到侧边栏外部作为独立元素 */}
+      <button className={styles.collapseButton} onClick={toggleCollapsed}>
+        {collapsed ? <RightOutlined /> : <LeftOutlined />}
+      </button>
       
       {/* 右侧内容区域 */}
       <main className={`${styles.content} ${collapsed ? styles.contentWhenNarrow : ''}`}>
@@ -1199,69 +1265,60 @@ const ShareView = () => {
           </Button>
         ]}
         onCancel={closeStoreModal}
-        width={700}
+        width="auto"
+        style={{ maxWidth: '60%', top: '12.5%' }}
+        bodyStyle={{ 
+          maxHeight: 'calc(75vh - 110px)', 
+          overflow: 'auto', 
+          padding: '24px',
+          overflowX: 'hidden'
+        }}
       >
-        <div className={styles.modalContent}>
-          <Paragraph className={styles.modalParagraph}>
-            <strong>方法 1: 通过输入法切换全角模式</strong>
-          </Paragraph>
-          
-          <ol className={styles.modalList}>
-            <li className={styles.modalListItem}>切换到中文输入法</li>
-            <li className={styles.modalListItem}>确保当前使用的是中文输入法（如系统自带的微软拼音、搜狗输入法等）。</li>
-            <li className={styles.modalListItem}>
-              切换全角模式
-              <ul>
-                <li>微软拼音：按下快捷键 Shift + Space （同时按住 Shift 和空格键），此时输入法状态栏会显示 全 或 Ａ（全角模式下显示全）。</li>
-                <li>其他输入法：部分输入法可能需要通过点击状态栏上的 半/全 按钮手动切换。</li>
-              </ul>
-            </li>
-            <li className={styles.modalListItem}>输入全角空格</li>
-            <li className={styles.modalListItem}>切换至全角模式后，直接按空格键，即可输入占两个字符宽度的全角空格。</li>
-          </ol>
-          
-          <Divider className={styles.modalDivider} />
-          
-          <Paragraph className={styles.modalParagraph}>
-            <strong>方法 2: 使用 Unicode 编码输入</strong>
-          </Paragraph>
-          
-          <ol className={styles.modalList}>
-            <li className={styles.modalListItem}>按住 Alt 键，通过小键盘输入 12288 (确保 NumLock 已开启)。</li>
-            <li className={styles.modalListItem}>松开 Alt 键，即可输入全角空格 (Unicode 编码 U+3000)。</li>
-          </ol>
-          
-          <Divider className={styles.modalDivider} />
-          
-          <Paragraph className={styles.modalParagraph}>
-            <strong>验证是否成功</strong>
-          </Paragraph>
-          
-          <ul className={styles.modalList}>
-            <li className={styles.modalListItem}>
-              在文本编辑器（如记事本、Word）中输入空格后:
-              <ul>
-                <li>半角空格: 占据 1 字符宽度, 如 Hello World。</li>
-                <li>全角空格: 占据 2 字符宽度, 如 你好　世界 (中间为全角空格)。</li>
-              </ul>
-            </li>
-          </ul>
-          
-          <Divider className={styles.modalDivider} />
-          
-          <Paragraph className={styles.modalParagraph}>
-            <strong>注意事项</strong>
-          </Paragraph>
-          
-          <ul className={styles.modalList}>
-            <li className={styles.modalListItem}>部分应用程序（如代码编辑器）可能不接受全角空格，建议根据场景灵活使用。</li>
-            <li className={styles.modalListItem}>如果快捷键无效，请检查输入法设置或尝试重启输入法（按 Win + Ctrl + O）。</li>
-          </ul>
-          
-          <Paragraph className={styles.modalParagraph}>
-            希望以上方法能帮助您顺利输入中文全角空格！😊
-          </Paragraph>
-        </div>
+        {staticContentLoading['store-service'] ? (
+          <div style={{ textAlign: 'center', padding: '20px' }}>
+            <Spin size="large" tip="加载中..." />
+          </div>
+        ) : (
+          <div 
+            className={styles.modalContent}
+            dangerouslySetInnerHTML={{ 
+              __html: staticContents['store-service'] || '暂无内容'
+            }}
+          />
+        )}
+      </Modal>
+      
+      {/* 物流服务模态框 */}
+      <Modal
+        title="快递物流服务"
+        open={logisticsModalVisible}
+        footer={[
+          <Button key="close" onClick={closeLogisticsModal}>
+            关闭
+          </Button>
+        ]}
+        onCancel={closeLogisticsModal}
+        width="auto"
+        style={{ maxWidth: '60%', top: '12.5%' }}
+        bodyStyle={{ 
+          maxHeight: 'calc(75vh - 110px)', 
+          overflow: 'auto', 
+          padding: '24px',
+          overflowX: 'hidden'
+        }}
+      >
+        {staticContentLoading['logistics'] ? (
+          <div style={{ textAlign: 'center', padding: '20px' }}>
+            <Spin size="large" tip="加载中..." />
+          </div>
+        ) : (
+          <div 
+            className={styles.modalContent}
+            dangerouslySetInnerHTML={{ 
+              __html: staticContents['logistics'] || '暂无内容'
+            }}
+          />
+        )}
       </Modal>
       
       {/* 帮助中心模态框 */}
@@ -1274,48 +1331,27 @@ const ShareView = () => {
           </Button>
         ]}
         onCancel={closeHelpModal}
-        width={600}
+        width="auto"
+        style={{ maxWidth: '60%', top: '12.5%' }}
+        bodyStyle={{ 
+          maxHeight: 'calc(75vh - 110px)', 
+          overflow: 'auto', 
+          padding: '24px',
+          overflowX: 'hidden'
+        }}
       >
-        <div className={styles.modalContent}>
-          <Paragraph className={styles.modalParagraph}>
-            <strong>如何使用帮你品牌货盘系统？</strong>
-          </Paragraph>
-          
-          <ol className={styles.modalList}>
-            <li className={styles.modalListItem}>浏览产品：您可以在主页上浏览所有产品，使用筛选功能查找特定品牌或产品。</li>
-            <li className={styles.modalListItem}>查看详情：点击产品卡片或表格中的产品可查看详细信息。</li>
-            <li className={styles.modalListItem}>联系卖家：页面顶部显示卖家联系方式，您可以通过电话、微信等方式联系。</li>
-            <li className={styles.modalListItem}>下载素材：部分产品提供素材包，点击"下载素材"即可获取。</li>
-          </ol>
-          
-          <Divider className={styles.modalDivider} />
-          
-          <Paragraph className={styles.modalParagraph}>
-            <strong>常见问题</strong>
-          </Paragraph>
-          
-          <ul className={styles.modalList}>
-            <li className={styles.modalListItem}><strong>为什么我看不到某些产品？</strong> - 可能是因为筛选条件限制，请尝试清除筛选条件。</li>
-            <li className={styles.modalListItem}><strong>如何获取最新价格？</strong> - 价格档位显示在产品详情中，或直接联系卖家获取最新报价。</li>
-            <li className={styles.modalListItem}><strong>如何建立合作关系？</strong> - 请联系页面顶部显示的卖家联系方式，与卖家直接沟通。</li>
-          </ul>
-          
-          <Divider className={styles.modalDivider} />
-          
-          <Paragraph className={styles.modalParagraph}>
-            <strong>联系我们</strong>
-          </Paragraph>
-          
-          <Paragraph className={styles.modalParagraph}>
-            如果您有任何其他问题，请通过以下方式联系我们：
-          </Paragraph>
-          
-          <ul className={styles.modalList}>
-            <li className={styles.modalListItem}>客服电话：400-123-4567</li>
-            <li className={styles.modalListItem}>客服邮箱：support@bonnei.com</li>
-            <li className={styles.modalListItem}>工作时间：周一至周五 9:00-18:00</li>
-          </ul>
-        </div>
+        {staticContentLoading['help-center'] ? (
+          <div style={{ textAlign: 'center', padding: '20px' }}>
+            <Spin size="large" tip="加载中..." />
+          </div>
+        ) : (
+          <div 
+            className={styles.modalContent}
+            dangerouslySetInnerHTML={{ 
+              __html: staticContents['help-center'] || '暂无内容'
+            }}
+          />
+        )}
       </Modal>
     </div>
   );

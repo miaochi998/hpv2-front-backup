@@ -26,6 +26,7 @@ const BrandManagement = lazy(() => import('@/pages/admin/BrandManagement'));
 const UserManagement = lazy(() => import('@/pages/admin/UserManagement'));
 const AdminManagement = lazy(() => import('@/pages/admin/AdminManagement'));
 const ViewSalesPallets = lazy(() => import('@/pages/admin/ViewSalesPallets'));
+const StaticContentManagement = lazy(() => import('@/pages/admin/StaticContentManagement'));
 
 // 销售员页面
 const ProfileManagement = lazy(() => import('@/pages/ProfileManagement'));
@@ -122,6 +123,13 @@ const router = createBrowserRouter([
             path: 'sales-pallets', 
             element: <PrivateRoute 
               element={lazyLoad(ViewSalesPallets)} 
+              requiredRoles={['admin']} 
+            />
+          },
+          { 
+            path: 'static-content', 
+            element: <PrivateRoute 
+              element={lazyLoad(StaticContentManagement)} 
               requiredRoles={['admin']} 
             />
           },

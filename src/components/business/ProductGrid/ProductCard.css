@@ -17,37 +17,6 @@
   transform: translateY(-2px);
 }
 
-.product-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 12px;
-  border-bottom: 1px solid #f5f5f5;
-}
-
-.product-card-index {
-  font-size: 14px;
-  font-weight: 500;
-  color: #666;
-  background-color: #f5f5f5;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.product-card-actions {
-  display: flex;
-  gap: 4px;
-}
-
-.product-card-action-btn {
-  padding: 2px;
-  height: auto;
-}
-
 .product-card-image {
   position: relative;
   width: 100%;
@@ -90,50 +59,56 @@
 
 .product-card-content {
   flex: 1;
-  padding: 12px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
+  overflow: visible;
 }
 
 .product-card-name {
-  margin: 0 0 12px 0;
+  margin: 0 0 16px 0;
   font-size: 16px;
   font-weight: 500;
   color: #333;
-  line-height: 1.4;
-  height: 44px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+  line-height: 1.5;
+  min-height: 44px;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  word-break: break-word;
+  display: block;
 }
 
 .product-card-info {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-bottom: 12px;
+  gap: 10px;
+  margin-bottom: 16px;
 }
 
 .product-card-info-item {
   display: flex;
   font-size: 13px;
-  line-height: 1.4;
+  line-height: 1.6;
+  min-height: 24px;
+  align-items: flex-start;
 }
 
 .product-card-label {
   color: #666;
-  width: 60px;
+  width: 70px;
   flex-shrink: 0;
+  padding-top: 2px;
 }
 
 .product-card-value {
   color: #333;
   flex: 1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  word-break: break-word;
+  line-height: 1.6;
 }
 
 .product-card-price {
@@ -151,13 +126,15 @@
   border: 1px solid #f0f0f0;
   border-radius: 4px;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .product-card-price-title {
   font-size: 14px;
   font-weight: 500;
   text-align: center;
-  padding: 6px;
+  padding: 8px;
   background-color: #f5f7fa;
   border-bottom: 1px solid #f0f0f0;
   color: #333;
@@ -173,18 +150,26 @@
 
 .price-tier-qty-header, .price-tier-price-header {
   flex: 1;
-  padding: 6px 10px;
+  padding: 8px 10px;
   text-align: center;
+  font-weight: 500;
 }
 
 .price-tier-qty-header {
   border-right: 1px solid #f0f0f0;
 }
 
+.product-card-price-rows {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
 .product-card-price-row {
   display: flex;
   font-size: 13px;
   color: #333;
+  width: 100%;
 }
 
 .product-card-price-row:not(:last-child) {
@@ -193,8 +178,14 @@
 
 .price-tier-qty, .price-tier-price {
   flex: 1;
-  padding: 6px 10px;
+  padding: 8px 10px;
   text-align: center;
+  white-space: normal;
+  word-break: break-word;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .price-tier-qty {
@@ -217,25 +208,28 @@
 
 .product-card-footer {
   display: flex;
-  justify-content: space-between;
-  padding: 12px;
+  justify-content: space-around;
+  padding: 10px;
   border-top: 1px solid #f5f5f5;
   background-color: #fafafa;
 }
 
-.product-card-material-btn {
+.product-card-action-btn {
   padding: 0;
-  font-size: 13px;
   height: auto;
+  width: 32px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
+.product-card-action-btn .anticon {
+  font-size: 16px;
+}
+
+/* 移除不再使用的样式 */
+.product-card-material-btn,
+.product-card-no-material,
 .product-card-recycle-btn {
-  padding: 0;
-  font-size: 13px;
-  height: auto;
-}
-
-.product-card-no-material {
-  font-size: 13px;
-  color: #999;
+  display: none;
 } 

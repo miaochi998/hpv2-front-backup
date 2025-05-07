@@ -58,6 +58,17 @@ const ShareHistory = () => {
     }
   };
   
+  // 处理刷新按钮点击
+  const handleRefresh = () => {
+    // 重置分页到第一页
+    setPagination(prev => ({
+      ...prev,
+      current: 1
+    }));
+    // 获取最新数据
+    fetchShareHistory(1, pagination.pageSize);
+  };
+  
   // 初始加载
   useEffect(() => {
     fetchShareHistory();
@@ -104,9 +115,9 @@ const ShareHistory = () => {
       title: '分享类型',
       dataIndex: 'share_type',
       key: 'share_type',
-      width: 100,
+      width: 130,
       render: (type) => (
-        <Tag color="blue">
+        <Tag color="blue" style={{ padding: '2px 8px' }}>
           {type === 'FULL' ? '完整货盘' : type}
         </Tag>
       )
@@ -115,44 +126,44 @@ const ShareHistory = () => {
       title: '创建时间',
       dataIndex: 'created_at',
       key: 'created_at',
-      width: 180,
+      width: 170,
       render: (date) => formatDateTime(date)
     },
     {
       title: '最后访问时间',
       dataIndex: 'last_accessed',
       key: 'last_accessed',
-      width: 180,
+      width: 170,
       render: (date) => date ? formatDateTime(date) : '暂未访问'
     },
     {
       title: '访问次数',
       dataIndex: 'access_count',
       key: 'access_count',
-      width: 100
+      width: 80
     },
     {
       title: '分享链接',
       dataIndex: 'share_url',
       key: 'share_url',
-      ellipsis: true,
       render: (url) => (
-        <Tooltip title={url}>
+        <div className={styles.linkCell}>
           <a href={url} target="_blank" rel="noopener noreferrer">
-            <Space>
-              <LinkOutlined />
-              {url}
+            <Space align="start">
+              <LinkOutlined style={{ flexShrink: 0, marginTop: '4px' }} />
+              <span style={{ wordBreak: 'break-all', whiteSpace: 'normal' }}>{url}</span>
             </Space>
           </a>
-        </Tooltip>
+        </div>
       )
     },
     {
       title: '操作',
       key: 'action',
-      width: 200,
+      width: 300,
+      fixed: 'right',
       render: (_, record) => (
-        <Space>
+        <Space size={4}>
           <Button 
             icon={<QrcodeOutlined />} 
             onClick={() => handleViewQrcode(record)}
@@ -193,12 +204,13 @@ const ShareHistory = () => {
         extra={
           <Button 
             icon={<ReloadOutlined />} 
-            onClick={() => fetchShareHistory(pagination.current, pagination.pageSize)}
+            onClick={handleRefresh}
             loading={loading}
           >
             刷新
           </Button>
         }
+        className={styles.shareHistoryCard}
       >
         {data.length === 0 && !loading ? (
           <Empty description="暂无分享记录" />
@@ -215,7 +227,10 @@ const ShareHistory = () => {
             }}
             onChange={handleTableChange}
             loading={loading}
-            scroll={{ x: 1000 }}
+            className={styles.shareHistoryTable}
+            tableLayout="fixed"
+            bordered={false}
+            size="middle"
           />
         )}
       </Card>

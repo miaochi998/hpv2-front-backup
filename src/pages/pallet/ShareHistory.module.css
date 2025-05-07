@@ -2,6 +2,11 @@
   padding: 20px;
 }
 
+.shareHistoryCard {
+  width: 100%;
+  overflow: hidden;
+}
+
 .qrcodeLoading {
   display: flex;
   justify-content: center;
@@ -45,4 +50,50 @@
 
 .shareAlert {
   width: 100%;
+}
+
+/* 表格样式 */
+.shareHistoryTable {
+  width: 100%;
+}
+
+.shareHistoryTable :global(.ant-table) {
+  table-layout: fixed;
+}
+
+.shareHistoryTable :global(.ant-table-container) {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.shareHistoryTable :global(.ant-table-cell) {
+  vertical-align: top;
+  padding: 12px 8px;
+}
+
+.shareHistoryTable :global(.ant-table-cell:last-child) {
+  padding-right: 16px;
+}
+
+.shareHistoryTable :global(.ant-space) {
+  gap: 4px !important;
+}
+
+/* 链接单元格样式 */
+.linkCell {
+  word-break: break-all;
+  white-space: normal;
+  line-height: 1.5;
+  display: block;
+  width: 100%;
+  padding: 8px 0;
+}
+
+.linkText {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 160px;
 } 

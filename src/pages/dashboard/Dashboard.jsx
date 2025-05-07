@@ -13,6 +13,7 @@ import {
 } from '@ant-design/icons';
 import styles from './Dashboard.module.css';
 import { getDashboardOverview, getDashboardProfile } from '../../api/dashboard';
+import { useNavigate } from 'react-router-dom';
 
 const { Title, Text } = Typography;
 
@@ -30,6 +31,7 @@ const getAvatarUrl = (avatarPath) => {
 
 // 管理员仪表盘组件
 const AdminDashboard = () => {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [overview, setOverview] = useState(null);
   const [profile, setProfile] = useState(null);
@@ -148,10 +150,10 @@ const AdminDashboard = () => {
               </div>
             </div>
             <div className={styles.actionButtons}>
-              <Button type="primary" icon={<AppstoreOutlined />}>
+              <Button type="primary" icon={<AppstoreOutlined />} onClick={() => navigate('/protected/products')}>
                 管理货盘
               </Button>
-              <Button type="primary" icon={<ReloadOutlined />} className={styles.secondButton}>
+              <Button type="primary" icon={<ReloadOutlined />} className={styles.secondButton} onClick={() => navigate('/protected/recyclebin')}>
                 查看回收站
               </Button>
             </div>
@@ -181,7 +183,7 @@ const AdminDashboard = () => {
               </div>
             </div>
             <div className={styles.actionButtons}>
-              <Button type="primary" icon={<UserOutlined />}>
+              <Button type="primary" icon={<UserOutlined />} onClick={() => navigate('/protected/admin/admins')}>
                 管理管理员
               </Button>
             </div>
@@ -211,7 +213,7 @@ const AdminDashboard = () => {
               </div>
             </div>
             <div className={styles.actionButtons}>
-              <Button type="primary" icon={<UserOutlined />}>
+              <Button type="primary" icon={<UserOutlined />} onClick={() => navigate('/protected/admin/users')}>
                 管理用户
               </Button>
             </div>
@@ -224,6 +226,7 @@ const AdminDashboard = () => {
 
 // 销售员仪表盘组件
 const SellerDashboard = () => {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [overview, setOverview] = useState(null);
   const [profile, setProfile] = useState(null);
@@ -342,10 +345,10 @@ const SellerDashboard = () => {
               </div>
             </div>
             <div className={styles.actionButtons}>
-              <Button type="primary" icon={<AppstoreOutlined />}>
+              <Button type="primary" icon={<AppstoreOutlined />} onClick={() => navigate('/protected/products')}>
                 管理货盘
               </Button>
-              <Button type="primary" icon={<ReloadOutlined />} className={styles.secondButton}>
+              <Button type="primary" icon={<ReloadOutlined />} className={styles.secondButton} onClick={() => navigate('/protected/recyclebin')}>
                 查看回收站
               </Button>
             </div>

@@ -20,13 +20,14 @@
   box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
   overflow-y: auto;
   box-sizing: border-box;
+  overflow-x: visible; /* 允许子元素溢出，以显示折叠按钮 */
 }
 
 .siderWide {
-  width: 230px !important;
-  min-width: 230px !important;
-  max-width: 230px !important;
-  flex: 0 0 230px !important;
+  width: 130px !important;
+  min-width: 130px !important;
+  max-width: 130px !important;
+  flex: 0 0 130px !important;
 }
 
 .siderNarrow {
@@ -37,19 +38,36 @@
 }
 
 .collapseButton {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  color: rgba(255, 255, 255, 0.65);
-  background: transparent;
-  border: none;
-  font-size: 16px;
+  position: fixed;
+  top: 50%;
+  left: 112px; /* 宽导航时位置 - 按钮宽度的一半(18px)刚好使中线与宽导航宽度(130px)对齐 */
+  transform: translateY(-50%);
+  color: #fff;
+  background-color: #4527a0;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  transition: color 0.3s;
+  transition: all 0.3s ease;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+  z-index: 9999;
+  font-size: 14px;
+  padding: 0;
+  margin: 0;
+}
+
+.siderNarrow ~ .collapseButton {
+  left: 46px; /* 窄导航时位置 - 按钮宽度的一半(18px)刚好使中线与窄导航宽度(64px)对齐 */
 }
 
 .collapseButton:hover {
   color: #fff;
+  background-color: #3f21a3;
+  transform: translateY(-50%) scale(1.05);
 }
 
 .logo {
@@ -101,7 +119,7 @@
 }
 
 .menuItemWide {
-  padding-left: 50px;
+  padding-left: 20px;
   justify-content: flex-start;
   text-align: left;
 }
@@ -117,10 +135,10 @@
 }
 
 .menuItemIcon {
-  font-size: 18px;
-  width: 20px;
+  font-size: 16px;
+  width: 18px;
   text-align: center;
-  margin-right: 10px;
+  margin-right: 8px;
   flex-shrink: 0;
 }
 
@@ -130,10 +148,12 @@
 }
 
 .menuItemText {
-  font-size: 14px;
+  font-size: 13px;
   white-space: nowrap;
   display: inline-block;
   text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* 底部菜单容器 */
@@ -145,7 +165,7 @@
 }
 
 .bottomMenuContainer .menuItem {
-  padding-left: 50px;
+  padding-left: 20px;
 }
 
 .bottomMenuContainer .menuItemNarrow {
@@ -156,12 +176,14 @@
 /* 主内容区域 */
 .content {
   flex: 1;
-  margin-left: 230px;
+  margin-left: 130px;
   transition: all 0.3s;
-  width: calc(100% - 230px);
-  padding: 20px;
+  width: calc(100% - 130px);
+  padding: 20px 20px 20px 30px; /* 增加左侧padding，为按钮留出空间 */
   box-sizing: border-box;
   overflow-x: hidden;
+  position: relative;
+  z-index: 10; /* 确保内容区z-index低于按钮 */
 }
 
 .contentWhenNarrow {
@@ -419,6 +441,7 @@
   display: inline-block;
   min-width: 100%;
   width: max-content;
+  max-width: 100%;
 }
 
 /* 表头样式 */
@@ -430,15 +453,15 @@
     60px               /* 序号 */
     100px              /* 图片 */
     minmax(150px, 1fr) /* 名称 - 可伸缩 */
-    120px              /* 品牌 */
-    120px              /* 货号 */
-    minmax(100px, 0.8fr) /* 规格 - 减小宽度 */
+    minmax(100px, 0.8fr) /* 品牌 - 减小宽度使其能适应内容 */
+    minmax(100px, 0.8fr) /* 货号 - 可伸缩 */
+    minmax(100px, 0.8fr) /* 规格 - 可伸缩 */
     minmax(100px, 0.8fr) /* 净含量 - 可伸缩 */
-    minmax(120px, 0.8fr) /* 产品尺寸 - 可伸缩 */
-    minmax(120px, 0.8fr) /* 发货方式 - 可伸缩 */
-    minmax(120px, 0.8fr) /* 发货规格 - 可伸缩 */
-    minmax(100px, 0.8fr) /* 发货尺寸 - 减小宽度 */
-    200px              /* 价格档位 - 增加宽度 */
+    minmax(100px, 0.8fr) /* 产品尺寸 - 可伸缩 */
+    minmax(100px, 0.8fr) /* 装箱方式 - 可伸缩 */
+    minmax(100px, 0.8fr) /* 装箱规格 - 可伸缩 */
+    minmax(100px, 0.8fr) /* 装箱尺寸 - 可伸缩 */
+    200px              /* 价格档位 */
     70px               /* 产品链接 */
     70px;              /* 素材包 */
   background-color: #e6f7ff; /* 淡蓝色背景 */
@@ -466,15 +489,15 @@
     60px               /* 序号 */
     100px              /* 图片 */
     minmax(150px, 1fr) /* 名称 - 可伸缩 */
-    120px              /* 品牌 */
-    120px              /* 货号 */
-    minmax(100px, 0.8fr) /* 规格 - 减小宽度 */
+    minmax(100px, 0.8fr) /* 品牌 - 减小宽度使其能适应内容 */
+    minmax(100px, 0.8fr) /* 货号 - 可伸缩 */
+    minmax(100px, 0.8fr) /* 规格 - 可伸缩 */
     minmax(100px, 0.8fr) /* 净含量 - 可伸缩 */
-    minmax(120px, 0.8fr) /* 产品尺寸 - 可伸缩 */
-    minmax(120px, 0.8fr) /* 发货方式 - 可伸缩 */
-    minmax(120px, 0.8fr) /* 发货规格 - 可伸缩 */
-    minmax(100px, 0.8fr) /* 发货尺寸 - 减小宽度 */
-    200px              /* 价格档位 - 增加宽度 */
+    minmax(100px, 0.8fr) /* 产品尺寸 - 可伸缩 */
+    minmax(100px, 0.8fr) /* 装箱方式 - 可伸缩 */
+    minmax(100px, 0.8fr) /* 装箱规格 - 可伸缩 */
+    minmax(100px, 0.8fr) /* 装箱尺寸 - 可伸缩 */
+    200px              /* 价格档位 */
     70px               /* 产品链接 */
     70px;              /* 素材包 */
   border-bottom: 1px solid #e8e8e8;
@@ -507,6 +530,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   box-sizing: border-box;
+  white-space: normal; /* 允许文本自然换行 */
 }
 
 /* 为序号列添加左边框 */
@@ -632,6 +656,7 @@
   justify-content: center; /* 居中对齐文本 */
   padding: 12px 16px; /* 增加一点左右内边距 */
   text-align: center; /* 确保文本居中 */
+  hyphens: auto; /* 启用连字符 */
 }
 
 /* 空状态样式 */
@@ -650,12 +675,15 @@
 .gridColSize,
 .gridColShipping,
 .gridColShipSpec,
-.gridColShipSize {
+.gridColShipSize,
+.gridColCode {
   white-space: normal;
   overflow: visible;
   word-break: break-word;
   width: 100%;
   box-sizing: border-box;
+  hyphens: auto; /* 启用连字符 */
+  line-height: 1.5; /* 增加行高，提高可读性 */
 }
 
 /* 价格档位样式 */
@@ -748,16 +776,19 @@
 
 /* 品牌列特殊样式，确保不会超出固定宽度 */
 .gridColBrand {
-  max-width: 120px !important;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  max-width: none;
+  overflow: visible;
+  word-break: break-word;
+  white-space: normal;
+  text-overflow: initial;
+  line-height: 1.5;
 }
 
 /* 窄屏适配 */
 @media screen and (max-width: 1440px) {
   .tableContent {
-    min-width: 1500px;
+    min-width: 100%;
+    width: max-content;
   }
   
   .gridColLink {
@@ -1009,6 +1040,10 @@
   align-items: center;
   justify-content: center;
   height: 100%;
+  word-break: break-word;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
 }
 
 .cardTierQtyHeader {
@@ -1034,6 +1069,10 @@
   align-items: center;
   justify-content: center;
   font-size: 14px;
+  word-break: break-word;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
 }
 
 .cardTierQty {
@@ -1080,25 +1119,41 @@
 
 /* 弹窗样式 */
 .modalContent {
-  max-height: 70vh;
-  overflow-y: auto;
+  width: 100%;
+  /* 确保所有内容可见，包括内嵌样式 */
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  word-break: break-word;
+  overflow-x: hidden;
+  min-width: 300px;
 }
 
-.modalParagraph {
-  margin-bottom: 16px;
+/* 模态框内容中的图片样式 */
+.modalContent img {
+  max-width: 100%;
+  height: auto;
 }
 
-.modalList {
-  margin-left: 20px;
-  margin-bottom: 16px;
+/* 模态框内容中的预格式化文本样式 */
+.modalContent pre {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
-.modalListItem {
-  margin-bottom: 8px;
+/* 保持表格在小屏幕上不溢出 */
+.modalContent table {
+  width: 100%;
+  max-width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
 }
 
-.modalDivider {
-  margin: 24px 0;
+/* 表格单元格样式 */
+.modalContent table td, .modalContent table th {
+  word-break: break-word;
+  padding: 8px;
 }
 
 /* 产品列表容器 */
@@ -1441,19 +1496,22 @@
 
 @media screen and (max-width: 1440px) {
   .tableContent {
-    min-width: 1500px;
+    min-width: 100%;
+    width: max-content;
   }
 }
 
 @media screen and (max-width: 1200px) {
   .tableContent {
-    min-width: 1500px;
+    min-width: 100%;
+    width: max-content;
   }
 }
 
 @media screen and (max-width: 992px) {
   .tableContent {
-    min-width: 1500px;
+    min-width: 100%;
+    width: max-content;
   }
 }
 

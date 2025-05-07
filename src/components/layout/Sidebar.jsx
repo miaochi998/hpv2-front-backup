@@ -13,7 +13,8 @@ import {
   SettingOutlined,
   LeftOutlined,
   RightOutlined,
-  ShareAltOutlined
+  ShareAltOutlined,
+  FileTextOutlined
 } from '@ant-design/icons';
 import { logoutAsync } from '../../store/slices/authSlice';
 import { getImageUrl } from '../../config/urls';
@@ -95,6 +96,11 @@ const Sidebar = () => {
         label: '总货盘管理'
       },
       {
+        key: '/protected/recyclebin',
+        icon: <DeleteOutlined />,
+        label: '货盘回收站'
+      },
+      {
         key: '/protected/admin/sales-pallets',
         icon: <WindowsOutlined />,
         label: '查看销售货盘'
@@ -113,6 +119,16 @@ const Sidebar = () => {
         key: '/protected/admin/admins',
         icon: <SettingOutlined />,
         label: '管理员管理'
+      },
+      {
+        key: '/protected/admin/static-content',
+        icon: <FileTextOutlined />,
+        label: '静态内容管理'
+      },
+      {
+        key: '/protected/share-history',
+        icon: <ShareAltOutlined />,
+        label: '分享历史'
       }
     ] : [];
     
@@ -124,27 +140,24 @@ const Sidebar = () => {
         label: '货盘管理'
       },
       {
+        key: '/protected/recyclebin',
+        icon: <DeleteOutlined />,
+        label: '货盘回收站'
+      },
+      {
         key: '/protected/seller/company-pallets',
         icon: <WindowsOutlined />,
         label: '查看公司货盘'
-      }
-    ] : [];
-    
-    // 公共菜单(位于底部)
-    const commonMenuItems = [
+      },
       {
         key: '/protected/share-history',
         icon: <ShareAltOutlined />,
         label: '分享历史'
-      },
-      {
-        key: '/protected/recyclebin',
-        icon: <DeleteOutlined />,
-        label: '货盘回收站'
       }
-    ];
+    ] : [];
     
-    return [...baseMenuItems, ...adminMenuItems, ...sellerMenuItems, ...commonMenuItems];
+    // 返回菜单项 - 不再需要单独的公共菜单，已经合并到各自的菜单中
+    return [...baseMenuItems, ...adminMenuItems, ...sellerMenuItems];
   };
   
   return (

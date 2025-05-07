@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { App } from 'antd';
+import { useSelector } from 'react-redux';
 import Login from '@/pages/Login';
 import NotFound from '@/pages/NotFound';
 import Layout from '@/components/layout/Layout';
@@ -14,18 +15,18 @@ import SalesPalletView from '@/pages/sales/SalesPalletView';
 import Profile from '@/pages/user/Profile';
 import Unauthorized from '@/pages/Unauthorized';
 import AuthGuard from '@/components/auth/AuthGuard';
-import { useAuthStore } from '@/stores/authStore';
 import RecycleBin from '@/pages/pallet/RecycleBin';
+import StaticContentManagement from '@/pages/admin/StaticContentManagement';
 
 const AppRoutes = () => {
-  const { isLoggedIn, userInfo } = useAuthStore();
-  const isAdmin = userInfo?.is_admin === true;
+  const { isAuthenticated, user } = useSelector(state => state.auth);
+  const isAdmin = user?.is_admin === true;
 
   return (
     <App>
       <Router>
         <Routes>
-          <Route path="/login" element={!isLoggedIn ? <Login /> : <Navigate to="/dashboard" />} />
+          <Route path="/login" element={!isAuthenticated ? <Login /> : <Navigate to="/dashboard" />} />
           <Route path="/unauthorized" element={<Unauthorized />} />
           
           <Route element={<AuthGuard />}>
@@ -42,6 +43,10 @@ const AppRoutes = () => {
                 <Route 
                   path="admins" 
                   element={isAdmin ? <AdminManagement /> : <Navigate to="/unauthorized" />} 
+                />
+                <Route 
+                  path="static-content" 
+                  element={isAdmin ? <StaticContentManagement /> : <Navigate to="/unauthorized" />} 
                 />
               </Route>
               

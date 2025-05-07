@@ -1,6 +1,6 @@
 import React from 'react';
 import { Button, Tooltip } from 'antd';
-import { EditOutlined, DeleteOutlined, DownloadOutlined, EyeOutlined } from '@ant-design/icons';
+import { EditOutlined, DeleteOutlined, DownloadOutlined, EyeOutlined, LinkOutlined, DeleteFilled, RestOutlined } from '@ant-design/icons';
 import { getImageUrl } from '@/config/urls';
 import './ProductCard.css';
 
@@ -90,41 +90,20 @@ const ProductCard = ({
           <span className="price-tier-qty-header">订购数量</span>
           <span className="price-tier-price-header">单价</span>
         </div>
-        {product.price_tiers.map((tier, index) => (
-          <div key={tier.id || index} className="product-card-price-row">
-            <span className="price-tier-qty">{`≤${tier.quantity}`}</span>
-            <span className="price-tier-price">{tier.price}</span>
-          </div>
-        ))}
+        <div className="product-card-price-rows">
+          {product.price_tiers.map((tier, index) => (
+            <div key={tier.id || index} className="product-card-price-row">
+              <span className="price-tier-qty">{`≤${tier.quantity}`}</span>
+              <span className="price-tier-price">{tier.price}</span>
+            </div>
+          ))}
+        </div>
       </div>
     );
   };
 
   return (
     <div className="product-card">
-      <div className="product-card-header">
-        <div className="product-card-index">{product.index}</div>
-        <div className="product-card-actions">
-          <Tooltip title="编辑">
-            <Button 
-              type="link" 
-              icon={<EditOutlined />} 
-              onClick={() => onEdit(product)}
-              className="product-card-action-btn"
-            />
-          </Tooltip>
-          <Tooltip title="删除">
-            <Button 
-              type="link" 
-              danger
-              icon={<DeleteOutlined />} 
-              onClick={() => onDelete(product.id)}
-              className="product-card-action-btn"
-            />
-          </Tooltip>
-        </div>
-      </div>
-      
       {renderProductImage()}
       
       <div className="product-card-content">
@@ -172,49 +151,81 @@ const ProductCard = ({
             <span className="product-card-label">装箱尺寸:</span>
             <span className="product-card-value">{product.shipping_size || '-'}</span>
           </div>
-          
-          {product.product_url && (
-            <div className="product-card-info-item">
-              <span className="product-card-label">产品链接:</span>
-              <span className="product-card-value">
-                <Button 
-                  type="link" 
-                  size="small"
-                  style={{ padding: 0, height: 'auto' }}
-                  onClick={() => window.open(product.product_url, '_blank')}
-                >
-                  查看链接
-                </Button>
-              </span>
-            </div>
-          )}
         </div>
         
         {renderPriceTiers()}
       </div>
       
       <div className="product-card-footer">
-        {/* 检查是否有素材包 - 查找类型为MATERIAL的附件 */}
+        {/* 编辑按钮 */}
+        <Tooltip title="编辑">
+          <Button 
+            type="link" 
+            icon={<EditOutlined />} 
+            onClick={() => onEdit(product)}
+            className="product-card-action-btn"
+          />
+        </Tooltip>
+        
+        {/* 产品链接按钮 */}
+        {product.product_url ? (
+          <Tooltip title="查看产品链接">
+            <Button 
+              type="link" 
+              icon={<LinkOutlined />} 
+              onClick={() => window.open(product.product_url, '_blank')}
+              className="product-card-action-btn"
+            />
+          </Tooltip>
+        ) : (
+          <Button 
+            type="link" 
+            icon={<LinkOutlined />} 
+            disabled
+            className="product-card-action-btn"
+          />
+        )}
+        
+        {/* 下载素材按钮 */}
         {product.attachments?.find(attachment => attachment.file_type === 'MATERIAL') ? (
+          <Tooltip title="下载素材">
+            <Button 
+              type="link" 
+              icon={<DownloadOutlined />} 
+              onClick={() => onDownloadMaterial(product)}
+              className="product-card-action-btn"
+            />
+          </Tooltip>
+        ) : (
           <Button 
             type="link" 
             icon={<DownloadOutlined />} 
-            onClick={() => onDownloadMaterial(product)}
-            className="product-card-material-btn"
-          >
-            下载素材
-          </Button>
-        ) : (
-          <span className="product-card-no-material">暂无素材</span>
+            disabled
+            className="product-card-action-btn"
+          />
         )}
         
-        <Button 
-          type="link"
-          onClick={() => onMoveToRecycleBin(product.id)}
-          className="product-card-recycle-btn"
-        >
-          放入回收站
-        </Button>
+        {/* 放入回收站按钮 */}
+        <Tooltip title="放入回收站">
+          <Button 
+            type="link" 
+            icon={<RestOutlined />} 
+            onClick={() => onMoveToRecycleBin(product.id)}
+            className="product-card-action-btn"
+            style={{ color: '#faad14' }}
+          />
+        </Tooltip>
+        
+        {/* 永久删除按钮 */}
+        <Tooltip title="永久删除">
+          <Button 
+            type="link" 
+            danger
+            icon={<DeleteOutlined />} 
+            onClick={() => onDelete(product.id)}
+            className="product-card-action-btn"
+          />
+        </Tooltip>
       </div>
     </div>
   );
