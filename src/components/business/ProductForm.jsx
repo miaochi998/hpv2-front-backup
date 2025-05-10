@@ -523,7 +523,17 @@ const ProductForm = ({ isEdit = false, initialValues = {}, onFinish, onCancel })
     formData.append('file', file);
     formData.append('entity_type', 'PRODUCT');
     formData.append('entity_id', isEdit ? initialValues.id : '0'); // 编辑模式使用产品ID，添加模式临时使用0
-    
+
+    // 记录上传参数
+    console.log('附件上传参数:', {
+      fileName: file.name,
+      fileType: file.type,
+      fileSize: file.size,
+      isEdit,
+      entityId: isEdit ? initialValues.id : '0',
+      isImageFile: file.type.startsWith('image/')
+    });
+
     try {
       // 根据文件类型选择不同的上传接口
       const isImage = file.type.startsWith('image/');
@@ -543,9 +553,22 @@ const ProductForm = ({ isEdit = false, initialValues = {}, onFinish, onCancel })
         }
       });
       
+      // 记录上传响应
+      console.log(`附件上传成功 - ${isImage ? '图片' : '素材包'}:`, {
+        fileName: file.name,
+        responseStatus: response.code,
+        attachmentId: response.data?.id,
+        filePath: response.data?.file_path
+      });
+      
       onSuccess(response);
     } catch (error) {
-      console.error('上传失败:', error);
+      console.error(`附件上传失败 - ${file.type.startsWith('image/') ? '图片' : '素材包'}:`, {
+        fileName: file.name,
+        error: error.message,
+        status: error.response?.status,
+        response: error.response?.data
+      });
       onError(error);
     }
   };
